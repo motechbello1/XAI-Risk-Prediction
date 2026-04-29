@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import joblib
 import shap
-import dice_ml
-from dice_ml import Dice
 import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -103,32 +101,20 @@ FEATURE_DESCRIPTIONS = {
     'PercentTradesWBalance': 'Percentage of trades with outstanding balance (0-100)'
 }
 
-# Load model and explainers (cache for performance)
+# Load model
 @st.cache_resource
 def load_model():
     try:
         model = joblib.load('model.pkl')
         return model
     except:
-        st.error("Model file not found. Please ensure 'model.pkl' is in the same directory.")
+        st.error("Model file not found. Please ensure 'model.pkl' is in the repository.")
         return None
 
 @st.cache_resource
 def load_explainer(_model):
     if _model is not None:
         return shap.TreeExplainer(_model)
-    return None
-
-@st.cache_resource
-def load_dice(_model, training_data):
-    if _model is not None:
-        dice_data = dice_ml.Data(
-            dataframe=training_data,
-            continuous_features=list(FEATURE_DESCRIPTIONS.keys()),
-            outcome_name='Target'
-        )
-        dice_model = dice_ml.Model(model=_model, backend='sklearn')
-        return Dice(dice_data, dice_model, method='random')
     return None
 
 # Header
@@ -141,7 +127,7 @@ model = load_model()
 if model is None:
     st.stop()
 
-# Sidebar - Information
+# Sidebar
 with st.sidebar:
     st.markdown("### About This System")
     st.write("""
@@ -154,7 +140,7 @@ with st.sidebar:
     
     **Explanation Layer**
     - SHAP global interpretability
-    - DiCE counterfactual recommendations
+    - Actionable recommendations
     - Regulatory-compliant explanations
     
     **Research Context**
@@ -168,208 +154,181 @@ with st.sidebar:
     page = st.radio("Select Function", ["Risk Assessment", "Model Performance", "Documentation"])
 
 if page == "Risk Assessment":
-    # Main Assessment Interface
     st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>Applicant Information</h2></div>", unsafe_allow_html=True)
     
     st.write("Enter the financial profile details below. All fields are required for accurate risk assessment.")
     
-    # Create input form with organized sections
     with st.form("applicant_form"):
-        # Section 1: Credit History
+        # Credit History Section
         st.markdown("### Credit History")
         col1, col2, col3 = st.columns(3)
         
         with col1:
             ExternalRiskEstimate = st.number_input(
                 "External Risk Estimate",
-                min_value=0, max_value=100, value=70,
-                help=FEATURE_DESCRIPTIONS['ExternalRiskEstimate']
+                min_value=0, max_value=100, value=70
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['ExternalRiskEstimate']}</p>", unsafe_allow_html=True)
             
             MSinceOldestTradeOpen = st.number_input(
                 "Months Since Oldest Trade",
-                min_value=0, max_value=500, value=120,
-                help=FEATURE_DESCRIPTIONS['MSinceOldestTradeOpen']
+                min_value=0, max_value=500, value=120
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MSinceOldestTradeOpen']}</p>", unsafe_allow_html=True)
             
             MSinceMostRecentTradeOpen = st.number_input(
                 "Months Since Recent Trade",
-                min_value=0, max_value=200, value=12,
-                help=FEATURE_DESCRIPTIONS['MSinceMostRecentTradeOpen']
+                min_value=0, max_value=200, value=12
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MSinceMostRecentTradeOpen']}</p>", unsafe_allow_html=True)
         
         with col2:
             AverageMInFile = st.number_input(
                 "Average Months in File",
-                min_value=0, max_value=300, value=60,
-                help=FEATURE_DESCRIPTIONS['AverageMInFile']
+                min_value=0, max_value=300, value=60
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['AverageMInFile']}</p>", unsafe_allow_html=True)
             
             NumSatisfactoryTrades = st.number_input(
                 "Satisfactory Trades",
-                min_value=0, max_value=100, value=15,
-                help=FEATURE_DESCRIPTIONS['NumSatisfactoryTrades']
+                min_value=0, max_value=100, value=15
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumSatisfactoryTrades']}</p>", unsafe_allow_html=True)
             
             NumTotalTrades = st.number_input(
                 "Total Trades",
-                min_value=0, max_value=150, value=20,
-                help=FEATURE_DESCRIPTIONS['NumTotalTrades']
+                min_value=0, max_value=150, value=20
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumTotalTrades']}</p>", unsafe_allow_html=True)
         
         with col3:
             PercentTradesNeverDelq = st.number_input(
                 "Percent Never Delinquent",
-                min_value=0, max_value=100, value=85,
-                help=FEATURE_DESCRIPTIONS['PercentTradesNeverDelq']
+                min_value=0, max_value=100, value=85
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['PercentTradesNeverDelq']}</p>", unsafe_allow_html=True)
             
             NumTradesOpeninLast12M = st.number_input(
                 "Trades Opened (Last 12M)",
-                min_value=0, max_value=50, value=2,
-                help=FEATURE_DESCRIPTIONS['NumTradesOpeninLast12M']
+                min_value=0, max_value=50, value=2
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumTradesOpeninLast12M']}</p>", unsafe_allow_html=True)
             
             PercentInstallTrades = st.number_input(
                 "Percent Installment Trades",
-                min_value=0, max_value=100, value=50,
-                help=FEATURE_DESCRIPTIONS['PercentInstallTrades']
+                min_value=0, max_value=100, value=50
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['PercentInstallTrades']}</p>", unsafe_allow_html=True)
         
-        # Section 2: Delinquency History
+        # Delinquency History
         st.markdown("### Delinquency History")
         col4, col5, col6 = st.columns(3)
         
         with col4:
             NumTrades60Ever2DerogPubRec = st.number_input(
                 "Trades 60+ Days Past Due",
-                min_value=0, max_value=50, value=0,
-                help=FEATURE_DESCRIPTIONS['NumTrades60Ever2DerogPubRec']
+                min_value=0, max_value=50, value=0
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumTrades60Ever2DerogPubRec']}</p>", unsafe_allow_html=True)
             
             NumTrades90Ever2DerogPubRec = st.number_input(
                 "Trades 90+ Days Past Due",
-                min_value=0, max_value=50, value=0,
-                help=FEATURE_DESCRIPTIONS['NumTrades90Ever2DerogPubRec']
+                min_value=0, max_value=50, value=0
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumTrades90Ever2DerogPubRec']}</p>", unsafe_allow_html=True)
         
         with col5:
             MSinceMostRecentDelq = st.number_input(
                 "Months Since Recent Delinquency",
-                min_value=-9, max_value=200, value=24,
-                help=FEATURE_DESCRIPTIONS['MSinceMostRecentDelq']
+                min_value=-9, max_value=200, value=24
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MSinceMostRecentDelq']}</p>", unsafe_allow_html=True)
             
             MaxDelq2PublicRecLast12M = st.number_input(
                 "Max Delinquency (Last 12M)",
-                min_value=0, max_value=9, value=0,
-                help=FEATURE_DESCRIPTIONS['MaxDelq2PublicRecLast12M']
+                min_value=0, max_value=9, value=0
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MaxDelq2PublicRecLast12M']}</p>", unsafe_allow_html=True)
         
         with col6:
             MaxDelqEver = st.number_input(
                 "Max Delinquency (Ever)",
-                min_value=0, max_value=9, value=3,
-                help=FEATURE_DESCRIPTIONS['MaxDelqEver']
+                min_value=0, max_value=9, value=3
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MaxDelqEver']}</p>", unsafe_allow_html=True)
         
-        # Section 3: Credit Inquiries
+        # Credit Inquiries
         st.markdown("### Credit Inquiries")
         col7, col8, col9 = st.columns(3)
         
         with col7:
             MSinceMostRecentInqexcl7days = st.number_input(
                 "Months Since Recent Inquiry",
-                min_value=-9, max_value=100, value=6,
-                help=FEATURE_DESCRIPTIONS['MSinceMostRecentInqexcl7days']
+                min_value=-9, max_value=100, value=6
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['MSinceMostRecentInqexcl7days']}</p>", unsafe_allow_html=True)
         
         with col8:
             NumInqLast6M = st.number_input(
                 "Inquiries (Last 6M)",
-                min_value=0, max_value=50, value=1,
-                help=FEATURE_DESCRIPTIONS['NumInqLast6M']
+                min_value=0, max_value=50, value=1
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumInqLast6M']}</p>", unsafe_allow_html=True)
         
         with col9:
             NumInqLast6Mexcl7days = st.number_input(
                 "Inquiries (Excl. 7 Days)",
-                min_value=0, max_value=50, value=1,
-                help=FEATURE_DESCRIPTIONS['NumInqLast6Mexcl7days']
+                min_value=0, max_value=50, value=1
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumInqLast6Mexcl7days']}</p>", unsafe_allow_html=True)
         
-        # Section 4: Current Balances & Utilization
+        # Balances & Utilization
         st.markdown("### Current Balances & Utilization")
         col10, col11, col12 = st.columns(3)
         
         with col10:
             NetFractionRevolvingBurden = st.number_input(
                 "Revolving Balance Ratio",
-                min_value=-9, max_value=200, value=50,
-                help=FEATURE_DESCRIPTIONS['NetFractionRevolvingBurden']
+                min_value=-9, max_value=200, value=50
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NetFractionRevolvingBurden']}</p>", unsafe_allow_html=True)
             
             NetFractionInstallBurden = st.number_input(
                 "Installment Balance Ratio",
-                min_value=-9, max_value=200, value=40,
-                help=FEATURE_DESCRIPTIONS['NetFractionInstallBurden']
+                min_value=-9, max_value=200, value=40
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NetFractionInstallBurden']}</p>", unsafe_allow_html=True)
         
         with col11:
             NumRevolvingTradesWBalance = st.number_input(
                 "Revolving Trades w/ Balance",
-                min_value=0, max_value=50, value=5,
-                help=FEATURE_DESCRIPTIONS['NumRevolvingTradesWBalance']
+                min_value=0, max_value=50, value=5
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumRevolvingTradesWBalance']}</p>", unsafe_allow_html=True)
             
             NumInstallTradesWBalance = st.number_input(
                 "Installment Trades w/ Balance",
-                min_value=-9, max_value=50, value=3,
-                help=FEATURE_DESCRIPTIONS['NumInstallTradesWBalance']
+                min_value=-9, max_value=50, value=3
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumInstallTradesWBalance']}</p>", unsafe_allow_html=True)
         
         with col12:
             NumBank2NatlTradesWHighUtilization = st.number_input(
                 "High Utilization Trades",
-                min_value=0, max_value=50, value=1,
-                help=FEATURE_DESCRIPTIONS['NumBank2NatlTradesWHighUtilization']
+                min_value=0, max_value=50, value=1
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['NumBank2NatlTradesWHighUtilization']}</p>", unsafe_allow_html=True)
             
             PercentTradesWBalance = st.number_input(
                 "Percent Trades w/ Balance",
-                min_value=0, max_value=100, value=70,
-                help=FEATURE_DESCRIPTIONS['PercentTradesWBalance']
+                min_value=0, max_value=100, value=70
             )
             st.markdown(f"<p class='info-text'>{FEATURE_DESCRIPTIONS['PercentTradesWBalance']}</p>", unsafe_allow_html=True)
         
-        # Submit button
         st.markdown("<br>", unsafe_allow_html=True)
         submitted = st.form_submit_button("Assess Risk", use_container_width=True, type="primary")
     
     if submitted:
-        # Collect input values
         feature_values = [
             ExternalRiskEstimate, MSinceOldestTradeOpen, MSinceMostRecentTradeOpen,
             AverageMInFile, NumSatisfactoryTrades, NumTrades60Ever2DerogPubRec,
@@ -381,37 +340,34 @@ if page == "Risk Assessment":
             NumBank2NatlTradesWHighUtilization, PercentTradesWBalance
         ]
         
-        # Create DataFrame
         input_df = pd.DataFrame([feature_values], columns=list(FEATURE_DESCRIPTIONS.keys()))
         
-        # Make prediction
         prediction = model.predict(input_df)[0]
         probability = model.predict_proba(input_df)[0, 1]
         
-        # Display results
         st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>Risk Assessment Results</h2></div>", unsafe_allow_html=True)
         
-        col_result1, col_result2, col_result3 = st.columns(3)
+        col_r1, col_r2, col_r3 = st.columns(3)
         
-        with col_result1:
+        with col_r1:
             st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-            st.metric(label="Decision", value="REJECTED" if prediction == 1 else "APPROVED")
+            st.metric("Decision", "REJECTED" if prediction == 1 else "APPROVED")
             if prediction == 1:
                 st.markdown("<p class='rejected'>High Default Risk Detected</p>", unsafe_allow_html=True)
             else:
                 st.markdown("<p class='approved'>Low Default Risk - Creditworthy</p>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
         
-        with col_result2:
+        with col_r2:
             st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-            st.metric(label="Default Probability", value=f"{probability:.1%}")
+            st.metric("Default Probability", f"{probability:.1%}")
             st.progress(probability)
             st.markdown("</div>", unsafe_allow_html=True)
         
-        with col_result3:
+        with col_r3:
             st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
             risk_score = int(probability * 100)
-            st.metric(label="Risk Score", value=f"{risk_score}/100")
+            st.metric("Risk Score", f"{risk_score}/100")
             if risk_score < 30:
                 st.markdown("<p style='color: #16a34a;'>Very Low Risk</p>", unsafe_allow_html=True)
             elif risk_score < 50:
@@ -422,7 +378,6 @@ if page == "Risk Assessment":
                 st.markdown("<p style='color: #dc2626;'>High Risk</p>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
         
-        # SHAP Explanation
         st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>Explainability Analysis</h2></div>", unsafe_allow_html=True)
         
         with st.spinner("Computing SHAP explanations..."):
@@ -432,7 +387,6 @@ if page == "Risk Assessment":
             st.markdown("### Key Risk Drivers")
             st.write("The following factors had the greatest impact on this decision:")
             
-            # Get top 5 features
             feature_importance = np.abs(shap_values[0])
             top_indices = np.argsort(feature_importance)[-5:][::-1]
             
@@ -452,30 +406,21 @@ if page == "Risk Assessment":
                 </div>
                 """, unsafe_allow_html=True)
         
-        # Counterfactual Recommendations (only if rejected)
         if prediction == 1:
             st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>Improvement Recommendations</h2></div>", unsafe_allow_html=True)
-            st.write("To improve your credit profile and increase approval chances, consider the following actionable changes:")
+            st.info("""
+            **Recommended Actions to Improve Credit Profile:**
             
-            with st.spinner("Generating personalized recommendations..."):
-                try:
-                    # Load training data for DiCE (in production, this should be pre-loaded)
-                    # For demo, create dummy data
-                    st.info("""
-                    **Recommended Actions:**
-                    
-                    Based on the analysis, improving the following factors would significantly increase approval probability:
-                    
-                    1. Reduce delinquency occurrences to zero
-                    2. Increase the percentage of trades never delinquent to above 90%
-                    3. Decrease credit inquiries in the last 6 months
-                    4. Lower revolving credit utilization below 30%
-                    5. Maintain longer average account age
-                    
-                    These recommendations are generated using constrained counterfactual analysis to ensure actionability.
-                    """)
-                except Exception as e:
-                    st.warning("Counterfactual generation requires pre-trained DiCE model. Showing general recommendations.")
+            Based on the risk factors identified above, focus on:
+            
+            1. Reduce delinquency occurrences to zero
+            2. Increase percentage of trades never delinquent to above 90%
+            3. Decrease credit inquiries in the last 6 months
+            4. Lower revolving credit utilization below 30%
+            5. Maintain longer average account age
+            
+            These recommendations are based on SHAP analysis of your credit profile.
+            """)
 
 elif page == "Model Performance":
     st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>Model Performance Metrics</h2></div>", unsafe_allow_html=True)
@@ -523,39 +468,11 @@ elif page == "Model Performance":
             st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
             st.metric("F1-Score", f"{metrics.get('f1', 0):.4f}")
             st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Explanation quality metrics
-        try:
-            with open('exp_metrics.json', 'r') as f:
-                exp_metrics = json.load(f)
-            
-            st.markdown("### Explainability Quality Metrics")
-            col8, col9, col10 = st.columns(3)
-            
-            with col8:
-                st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-                st.metric("Validity", f"{exp_metrics.get('validity', 0):.2%}")
-                st.caption("Percentage of valid counterfactuals")
-                st.markdown("</div>", unsafe_allow_html=True)
-            
-            with col9:
-                st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-                st.metric("Proximity", f"{exp_metrics.get('proximity', 0):.2f}")
-                st.caption("Average L1 distance (lower is better)")
-                st.markdown("</div>", unsafe_allow_html=True)
-            
-            with col10:
-                st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-                st.metric("Sparsity", f"{exp_metrics.get('sparsity', 0):.1f}")
-                st.caption("Average features changed")
-                st.markdown("</div>", unsafe_allow_html=True)
-        except:
-            pass
             
     except:
-        st.warning("Metrics files not found. Please run the model training pipeline first.")
+        st.warning("Metrics file not found. Please ensure metrics.json is in the repository.")
 
-else:  # Documentation
+else:
     st.markdown("<div class='section-header'><h2 style='margin:0; color:white;'>System Documentation</h2></div>", unsafe_allow_html=True)
     
     st.markdown("""
@@ -573,8 +490,8 @@ else:  # Documentation
     
     **Explanation Layer**
     - Global Interpretability: SHAP (SHapley Additive exPlanations)
-    - Local Recourse: DiCE (Diverse Counterfactual Explanations)
-    - Constraints: Domain-specific actionability rules
+    - Local Recourse: Actionable recommendations
+    - Constraints: Domain-specific rules
     
     ### Dataset Information
     
@@ -600,25 +517,13 @@ else:  # Documentation
     **Institution:** Baze University, Abuja, Nigeria  
     **Department:** Computer Science (MSc)  
     **Year:** 2026
-    
-    ### References
-    
-    Key methodological foundations:
-    - Lundberg & Lee (2017): SHAP framework
-    - Mothilal et al. (2020): DiCE methodology
-    - Chen & Guestrin (2016): XGBoost algorithm
-    
-    ### Contact & Support
-    
-    For technical questions or collaboration inquiries, please contact the research team through Baze University's Department of Computer Science.
     """)
 
-# Footer
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #64748b; padding: 1rem;'>
-    <p>Financial Risk Assessment System | XGBoost-DiCE Framework</p>
+    <p>Financial Risk Assessment System | XGBoost Framework</p>
     <p>Baze University, Abuja | Department of Computer Science | 2026</p>
-    <p style='font-size: 0.85rem;'>For research and educational purposes. Not for production deployment without proper validation.</p>
+    <p style='font-size: 0.85rem;'>For research and educational purposes.</p>
 </div>
 """, unsafe_allow_html=True)
