@@ -405,7 +405,7 @@ if page == "Risk Assessment":
         with col_result2:
             st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
             st.metric(label="Default Probability", value=f"{probability:.1%}")
-            st.progress(probability)
+            st.progress(float(probability))
             st.markdown("</div>", unsafe_allow_html=True)
         
         with col_result3:
