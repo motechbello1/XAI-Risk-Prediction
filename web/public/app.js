@@ -1,130 +1,511 @@
 const $ = (s, root = document) => root.querySelector(s);
-const esc = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const icon = (name = 'arrow') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${({arrow:'<path d="M5 12h14m-6-6 6 6-6 6"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20 15A8.5 8.5 0 0 1 9 4a8.5 8.5 0 1 0 11 11Z"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>'})[name] || ''}</svg>`;
+const esc = (v) =>
+  String(v).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+const icon = (name = "arrow") =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${{ arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>', close: '<path d="m6 6 12 12M6 18 18 6"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>', moon: '<path d="M20 15A8.5 8.5 0 0 1 9 4a8.5 8.5 0 1 0 11 11Z"/>', download: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>' }[name] || ""}</svg>`;
 let savedTheme;
-try { savedTheme = localStorage.getItem('risk-lab-theme'); } catch { /* Storage is optional. */ }
-document.documentElement.dataset.theme = savedTheme || 'light';
-function themeButton() { const dark = document.documentElement.dataset.theme === 'dark'; $('.theme-button').innerHTML = icon(dark ? 'sun' : 'moon'); $('.theme-button').setAttribute('aria-label', `Switch to ${dark ? 'light' : 'dark'} theme`); }
+try {
+  savedTheme = localStorage.getItem("risk-lab-theme");
+} catch {
+  /* Storage is optional. */
+}
+document.documentElement.dataset.theme = savedTheme || "light";
+function themeButton() {
+  const dark = document.documentElement.dataset.theme === "dark";
+  $(".theme-button").innerHTML = icon(dark ? "sun" : "moon");
+  $(".theme-button").setAttribute(
+    "aria-label",
+    `Switch to ${dark ? "light" : "dark"} theme`,
+  );
+}
 themeButton();
-$('.theme-button').addEventListener('click', () => { const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = theme; try { localStorage.setItem('risk-lab-theme', theme); } catch {} themeButton(); });
+$(".theme-button").addEventListener("click", () => {
+  const theme =
+    document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem("risk-lab-theme", theme);
+  } catch {}
+  themeButton();
+});
 let config, metrics, experiment;
 try {
-  [config, metrics, experiment] = await Promise.all(['/assets/config.json','/assets/metrics.json','/assets/exp_metrics.json'].map(async path => { const r=await fetch(path); if(!r.ok)throw Error('The project files could not load.'); return r.json(); }));
-} catch { $('#main').innerHTML='<div class="load-error"><h1>The lab could not open.</h1><p>Refresh the page to load the project files.</p><a href="/">Refresh the page ↗</a></div>'; throw Error('Project files unavailable'); }
-const groups = ['Credit history','Delinquency history','Credit inquiries','Balances and utilisation'];
-const groupNames = ['Account history','Payment history','Recent credit checks','Balances & borrowing'];
-const groupDescriptions = ['How long the accounts have existed and how many there are.','Whether payments were late, and how long ago.','How often lenders recently checked the credit record.','How much is still owed and how much of the available credit is used.'];
+  [config, metrics, experiment] = await Promise.all(
+    [
+      "/assets/config.json",
+      "/assets/metrics.json",
+      "/assets/exp_metrics.json",
+    ].map(async (path) => {
+      const r = await fetch(path);
+      if (!r.ok) throw Error("The project files could not load.");
+      return r.json();
+    }),
+  );
+} catch {
+  $("#main").innerHTML =
+    '<div class="load-error"><h1>The lab could not open.</h1><p>Refresh the page to load the project files.</p><a href="/">Refresh the page ↗</a></div>';
+  throw Error("Project files unavailable");
+}
+const groups = [
+  "Credit history",
+  "Delinquency history",
+  "Credit inquiries",
+  "Balances and utilisation",
+];
+const groupNames = [
+  "Account history",
+  "Payment history",
+  "Recent credit checks",
+  "Balances & borrowing",
+];
+const groupDescriptions = [
+  "How long the accounts have existed and how many there are.",
+  "Whether payments were late, and how long ago.",
+  "How often lenders recently checked the credit record.",
+  "How much is still owed and how much of the available credit is used.",
+];
 const labels = {
-  ExternalRiskEstimate:'Credit bureau score', MSinceOldestTradeOpen:'Age of oldest account', MSinceMostRecentTradeOpen:'Age of newest account',
-  AverageMInFile:'Average account age', NumSatisfactoryTrades:'Accounts in good standing', NumTotalTrades:'Total credit accounts',
-  NumTradesOpeninLast12M:'Accounts opened in the past year', PercentInstallTrades:'Share of instalment accounts',
-  PercentTradesNeverDelq:'Share of accounts never paid late', NumTrades60Ever2DerogPubRec:'Accounts ever 60+ days late',
-  NumTrades90Ever2DerogPubRec:'Accounts ever 90+ days late', MSinceMostRecentDelq:'Time since last late payment',
-  MaxDelq2PublicRecLast12M:'Worst late-payment code this year', MaxDelqEver:'Worst late-payment code on record',
-  MSinceMostRecentInqexcl7days:'Time since last credit check', NumInqLast6M:'Credit checks in the past 6 months',
-  NumInqLast6Mexcl7days:'Credit checks excluding the last 7 days', NetFractionRevolvingBurden:'Card credit used',
-  NetFractionInstallBurden:'Instalment loan balance ratio', NumRevolvingTradesWBalance:'Card accounts with money owed',
-  NumInstallTradesWBalance:'Instalment loans with money owed', NumBank2NatlTradesWHighUtilization:'Card accounts using over 75% of credit',
-  PercentTradesWBalance:'Share of accounts with money owed',
+  ExternalRiskEstimate: "Credit bureau score",
+  MSinceOldestTradeOpen: "Age of oldest account",
+  MSinceMostRecentTradeOpen: "Age of newest account",
+  AverageMInFile: "Average account age",
+  NumSatisfactoryTrades: "Accounts in good standing",
+  NumTotalTrades: "Total credit accounts",
+  NumTradesOpeninLast12M: "Accounts opened in the past year",
+  PercentInstallTrades: "Share of instalment accounts",
+  PercentTradesNeverDelq: "Share of accounts never paid late",
+  NumTrades60Ever2DerogPubRec: "Accounts ever 60+ days late",
+  NumTrades90Ever2DerogPubRec: "Accounts ever 90+ days late",
+  MSinceMostRecentDelq: "Time since last late payment",
+  MaxDelq2PublicRecLast12M: "Worst late-payment code this year",
+  MaxDelqEver: "Worst late-payment code on record",
+  MSinceMostRecentInqexcl7days: "Time since last credit check",
+  NumInqLast6M: "Credit checks in the past 6 months",
+  NumInqLast6Mexcl7days: "Credit checks excluding the last 7 days",
+  NetFractionRevolvingBurden: "Card credit used",
+  NetFractionInstallBurden: "Instalment loan balance ratio",
+  NumRevolvingTradesWBalance: "Card accounts with money owed",
+  NumInstallTradesWBalance: "Instalment loans with money owed",
+  NumBank2NatlTradesWHighUtilization: "Card accounts using over 75% of credit",
+  PercentTradesWBalance: "Share of accounts with money owed",
 };
 const explanations = {
-  ExternalRiskEstimate:'The bureau’s risk score, from 0 to 100. A higher score usually signals a safer profile.',
-  MSinceOldestTradeOpen:'Months since the first account opened. For example, 24 means 2 years.',
-  MSinceMostRecentTradeOpen:'Months since the newest account opened. Enter 0 if it opened this month.',
-  AverageMInFile:'The average age of all accounts, in months.',
-  NumSatisfactoryTrades:'The number of accounts recorded as being in good standing.',
-  NumTotalTrades:'The total number of credit accounts in the bureau record.',
-  NumTradesOpeninLast12M:'How many new credit accounts opened in the last 12 months.',
-  PercentInstallTrades:'The percentage of accounts with scheduled loan payments. Enter 40 for 40%.',
-  PercentTradesNeverDelq:'The percentage of accounts that have never had a late payment.',
-  NumTrades60Ever2DerogPubRec:'Accounts ever at least 60 days late, or linked to a serious negative public record.',
-  NumTrades90Ever2DerogPubRec:'Accounts ever at least 90 days late, or linked to a serious negative public record.',
-  MSinceMostRecentDelq:'Months since the last late payment. If the record says “condition not met”, choose that below.',
-  MaxDelq2PublicRecLast12M:'Use the original bureau category code, from 0 to 9. This is not a number of late payments.',
-  MaxDelqEver:'Use the original bureau category code, from 0 to 9. Do not guess this from days late.',
-  MSinceMostRecentInqexcl7days:'Months since the last credit check, ignoring checks from the past 7 days. Maximum 24.',
-  NumInqLast6M:'How many times lenders checked this person’s credit in the last 6 months.',
-  NumInqLast6Mexcl7days:'The same count, but leave out credit checks from the most recent 7 days.',
-  NetFractionRevolvingBurden:'Card balances divided by their limits, as a percentage. ₦20,000 of a ₦100,000 limit means 20.',
-  NetFractionInstallBurden:'Money still owed on instalment loans divided by the original loan amounts, as a percentage.',
-  NumRevolvingTradesWBalance:'The number of credit cards or revolving accounts that still have a balance.',
-  NumInstallTradesWBalance:'The number of instalment loans that still have a balance.',
-  NumBank2NatlTradesWHighUtilization:'Bank or national card accounts using more than 75% of their limit.',
-  PercentTradesWBalance:'The percentage of all accounts that still have money owed.',
+  ExternalRiskEstimate:
+    "The bureau’s risk score, from 0 to 100. A higher score usually signals a safer profile.",
+  MSinceOldestTradeOpen:
+    "Months since the first account opened. For example, 24 means 2 years.",
+  MSinceMostRecentTradeOpen:
+    "Months since the newest account opened. Enter 0 if it opened this month.",
+  AverageMInFile: "The average age of all accounts, in months.",
+  NumSatisfactoryTrades:
+    "The number of accounts recorded as being in good standing.",
+  NumTotalTrades: "The total number of credit accounts in the bureau record.",
+  NumTradesOpeninLast12M:
+    "How many new credit accounts opened in the last 12 months.",
+  PercentInstallTrades:
+    "The percentage of accounts with scheduled loan payments. Enter 40 for 40%.",
+  PercentTradesNeverDelq:
+    "The percentage of accounts that have never had a late payment.",
+  NumTrades60Ever2DerogPubRec:
+    "Accounts ever at least 60 days late, or linked to a serious negative public record.",
+  NumTrades90Ever2DerogPubRec:
+    "Accounts ever at least 90 days late, or linked to a serious negative public record.",
+  MSinceMostRecentDelq:
+    "Months since the last late payment. If the record says “condition not met”, choose that below.",
+  MaxDelq2PublicRecLast12M:
+    "Use the original bureau category code, from 0 to 9. This is not a number of late payments.",
+  MaxDelqEver:
+    "Use the original bureau category code, from 0 to 9. Do not guess this from days late.",
+  MSinceMostRecentInqexcl7days:
+    "Months since the last credit check, ignoring checks from the past 7 days. Maximum 24.",
+  NumInqLast6M:
+    "How many times lenders checked this person’s credit in the last 6 months.",
+  NumInqLast6Mexcl7days:
+    "The same count, but leave out credit checks from the most recent 7 days.",
+  NetFractionRevolvingBurden:
+    "Card balances divided by their limits, as a percentage. ₦20,000 of a ₦100,000 limit means 20.",
+  NetFractionInstallBurden:
+    "Money still owed on instalment loans divided by the original loan amounts, as a percentage.",
+  NumRevolvingTradesWBalance:
+    "The number of credit cards or revolving accounts that still have a balance.",
+  NumInstallTradesWBalance:
+    "The number of instalment loans that still have a balance.",
+  NumBank2NatlTradesWHighUtilization:
+    "Bank or national card accounts using more than 75% of their limit.",
+  PercentTradesWBalance:
+    "The percentage of all accounts that still have money owed.",
 };
-const label = f => labels[f] || config.features[f].label;
-const unit = f => f.startsWith('MSince') || f === 'AverageMInFile' ? ' months' : f.startsWith('Percent') || f.startsWith('NetFraction') ? '%' : '';
-const specialText = {'-7':'Condition not met', '-8':'No usable record', '-9':'No bureau record'};
-const valueText = (f, v) => v < 0 ? specialText[String(v)] : `${v}${unit(f)}`;
+const label = (f) => labels[f] || config.features[f].label;
+const unit = (f) =>
+  f.startsWith("MSince") || f === "AverageMInFile"
+    ? " months"
+    : f.startsWith("Percent") || f.startsWith("NetFraction")
+      ? "%"
+      : "";
+const specialText = {
+  "-7": "Condition not met",
+  "-8": "No usable record",
+  "-9": "No bureau record",
+};
+const valueText = (f, v) => (v < 0 ? specialText[String(v)] : `${v}${unit(f)}`);
 const cases = [
-  {title:'Everyday profile',description:'The middle values in the dataset.',code:'MEDIAN PROFILE'},
-  {title:'Higher-risk profile',description:'Explore changes that lower its score.',code:'TEST PROFILE 8347'},
-  {title:'Difficult profile',description:'See when a search finds no option.',code:'TEST PROFILE 6470'},
+  {
+    title: "Everyday profile",
+    description: "The middle values in the dataset.",
+    code: "MEDIAN PROFILE",
+  },
+  {
+    title: "Higher-risk profile",
+    description: "Explore changes that lower its score.",
+    code: "TEST PROFILE 8347",
+  },
+  {
+    title: "Difficult profile",
+    description: "See when a search finds no option.",
+    code: "TEST PROFILE 6470",
+  },
 ];
-let state = {example:1,custom:false,values:{...config.examples[1]},result:null,busy:false,error:'',options:null,optionsBusy:false,comparison:null};
+let state = {
+  example: 1,
+  custom: false,
+  values: { ...config.examples[1] },
+  result: null,
+  busy: false,
+  error: "",
+  options: null,
+  optionsBusy: false,
+  comparison: null,
+};
 let runController, optionsController, draft, editorReturn, toastTimer;
 const cache = new Map();
-const route = () => ['research','evidence','guide'].includes(location.hash.slice(1)) ? 'research' : 'lab';
-const pct = p => (p*100).toFixed(1);
-function toast(text) { $('#toast').textContent=text; $('#toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4000); }
-const profileTitle = () => state.comparison ? 'Changed scenario' : state.custom ? 'Your edited profile' : cases[state.example].title;
-function shell() {
-  document.title = `${route()==='research' ? 'The research' : 'See the risk. Read the reasons.'} | XAI Risk Lab`;
-  document.querySelectorAll('[data-nav]').forEach(a=>{ const active=a.dataset.nav===route(); a.classList.toggle('active',active); if(active)a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
-  $('#main').innerHTML = route()==='research' ? research() : lab();
+const route = () =>
+  ["research", "evidence", "guide"].includes(location.hash.slice(1))
+    ? "research"
+    : "lab";
+const pct = (p) => (p * 100).toFixed(1);
+function toast(text) {
+  $("#toast").textContent = text;
+  $("#toast").classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("#toast").classList.remove("visible"), 4000);
 }
-function lab() { return `<div class="workspace">
-  <section class="intro"><div><p class="eyebrow"><span class="live-dot"></span> EXPLAINABLE AI / CREDIT RISK</p><h1>SEE THE RISK.<br><span>READ THE REASONS.</span></h1></div><div class="intro-caption"><span class="caption-mark">↙</span><p>A score is only the beginning.<br>See what shaped it.<br>Explore what could change.</p></div></section>
-  <section class="case-selector" aria-label="Choose a sample profile"><div class="case-instruction"><span class="section-number">01</span><span>CHOOSE<br>A CASE</span></div>${cases.map((c,i)=>`<button class="case ${!state.custom && !state.comparison && state.example===i?'selected':''}" data-case="${i}" aria-pressed="${!state.custom && !state.comparison && state.example===i}"><span class="case-index">0${i+1}</span><span><strong>${c.title}</strong><small>${c.description}</small></span><span class="case-symbol" aria-hidden="true">${!state.custom && !state.comparison && state.example===i?'↗':'+'}</span></button>`).join('')}</section>
+const profileTitle = () =>
+  state.comparison
+    ? "Changed scenario"
+    : state.custom
+      ? "Your edited profile"
+      : cases[state.example].title;
+function shell() {
+  document.title = `${route() === "research" ? "The research" : "See the risk. Read the reasons."} | XAI Risk Lab`;
+  document.querySelectorAll("[data-nav]").forEach((a) => {
+    const active = a.dataset.nav === route();
+    a.classList.toggle("active", active);
+    if (active) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+  $("#main").innerHTML = route() === "research" ? research() : lab();
+}
+function lab() {
+  return `<div class="workspace">
+  <section class="intro"><div><p class="eyebrow"><span class="live-dot"></span> EXPLAINABLE AI / CREDIT RISK</p><h1>SEE THE RISK.<br><span>READ THE REASONS.</span></h1></div><div class="intro-caption"><span class="caption-mark">↙</span><p>Choose a case.<br>Read its score and reasons.<br><button class="text-link" data-jump>Explore possible changes ↓</button></p></div></section>
+  <section class="case-selector" aria-label="Choose a sample profile"><div class="case-instruction"><span class="section-number">01</span><span>CHOOSE<br>A CASE</span></div>${cases.map((c, i) => `<button class="case ${!state.custom && !state.comparison && state.example === i ? "selected" : ""}" data-case="${i}" aria-pressed="${!state.custom && !state.comparison && state.example === i}"><span class="case-index">0${i + 1}</span><span><strong>${c.title}</strong><small>${c.description}</small></span><span class="case-symbol" aria-hidden="true">${!state.custom && !state.comparison && state.example === i ? "↗" : "+"}</span></button>`).join("")}</section>
   <div id="assessment">${assessment()}</div>
-  <section class="changes-section" id="changes"><div class="changes-heading"><div><p class="eyebrow">03 / EXPLORE A DIFFERENT OUTCOME</p><h2>WHAT COULD CHANGE?</h2><p>Let the model try allowed changes over 24 months.</p></div><button class="primary" data-search ${!state.result || state.busy || state.optionsBusy || !state.result.higher_risk?'disabled':''}>${state.optionsBusy?'<span class="spinner"></span> Searching':state.options?'Search again':'Find possible changes'} ${icon()}</button></div><div id="options-body">${optionsHTML()}</div></section>
+  <section class="changes-section" id="changes"><div class="changes-heading"><div><p class="eyebrow">03 / EXPLORE A DIFFERENT OUTCOME</p><h2>WHAT COULD CHANGE?</h2><p>Let the model try allowed changes over 24 months.</p></div><button class="primary" data-search ${!state.result || state.busy || state.optionsBusy || !state.result.higher_risk ? "disabled" : ""}>${state.optionsBusy ? '<span class="spinner"></span> Searching' : state.options ? "Search again" : "Find possible changes"} ${icon()}</button></div><div id="options-body">${optionsHTML()}</div></section>
   <section class="understand"><div><p class="eyebrow">A LITTLE CONTEXT</p><h2>NO BLACK BOX.<br>JUST A CLEARER VIEW.</h2><a class="text-link" href="#research">See the evidence behind the model ${icon()}</a></div><div class="faq"><details><summary>What does the percentage mean?</summary><p>It is the model’s estimated chance of a high-risk label in this dataset. The study uses 50% as its decision line. A result of 61.5% sits above that line.</p></details><details><summary>Can I use my own profile?</summary><p>Choose “Edit profile”. Change the example values, or start with blank inputs. The model needs 23 values from a credit record. Missing information has its own record codes.</p></details><details><summary>Are these changes advice?</summary><p>They are simulated model scenarios. A lower model score does not guarantee a real-world outcome. The research search also cannot check every relationship between account values.</p></details><details><summary>What happens to the inputs?</summary><p>The profile is sent to this website’s scoring service and processed in memory. The application does not save applicant profiles. Browser printing lets you keep your own copy.</p></details></div></section>
   <p class="research-footnote">Built for research and demonstration. Based on US FICO HELOC data. This is not a live lending decision service.</p>
-</div>`; }
+</div>`;
+}
 function assessment() {
-  const r=state.result;
-  return `<section class="assessment-section" aria-labelledby="result-heading"><span class="sr-only" role="status">${r ? `Risk result: ${pct(r.probability)} percent. ${r.higher_risk ? 'Above' : 'Below'} the 50 percent decision line.` : ''}</span><div class="assessment-top"><div><span class="section-number">02</span><h2 id="result-heading">${esc(profileTitle())}</h2><span class="record-code">${state.custom || state.comparison?'CUSTOM INPUTS':cases[state.example].code}</span></div><div class="result-tools"><button class="text-link" data-edit ${state.busy?'disabled':''}>Edit profile ↗</button><button class="report-button" data-print aria-label="Save result as PDF" title="Save result as PDF" ${!r || state.busy?'disabled':''}>${icon('download')}</button></div></div>
-  ${state.comparison?`<div class="comparison-strip"><span>Original <b>${pct(state.comparison.result.probability)}%</b><span aria-hidden="true"> → </span> Scenario <b>${r?pct(r.probability):'…'}%</b></span><button data-restore>Return to original ↩</button></div>`:''}
-  ${state.busy?`<div class="result-loading" role="status"><div class="score-skeleton"></div><div><span class="spinner"></span><h3>Reading the credit record.</h3><p>Calculating the score and its reasons with the original model.</p></div></div>`:state.error?`<div class="result-error" role="alert"><h3>The score could not load.</h3><p>${esc(state.error)}</p><button class="primary" data-retry>Try again ${icon()}</button></div>`:r?resultContent(r):''}
+  const r = state.result;
+  return `<section class="assessment-section" aria-labelledby="result-heading"><span class="sr-only" role="status">${r ? `Risk result: ${pct(r.probability)} percent. ${r.higher_risk ? "Above" : "Below"} the 50 percent decision line.` : ""}</span><div class="assessment-top"><div><span class="section-number">02</span><h2 id="result-heading">${esc(profileTitle())}</h2><span class="record-code">${state.custom || state.comparison ? "CUSTOM INPUTS" : cases[state.example].code}</span></div><div class="result-tools"><button class="text-link" data-edit ${state.busy ? "disabled" : ""}>Edit profile ↗</button><button class="report-button" data-print aria-label="Save result as PDF" title="Save result as PDF" ${!r || state.busy ? "disabled" : ""}>${icon("download")}</button></div></div>
+  ${state.comparison ? `<div class="comparison-strip"><span>Original <b>${pct(state.comparison.result.probability)}%</b><span aria-hidden="true"> → </span> Scenario <b>${r ? pct(r.probability) : "…"}%</b></span><button data-restore>Return to original ↩</button></div>` : ""}
+  ${state.busy ? `<div class="result-loading" role="status"><div class="score-skeleton"></div><div><span class="spinner"></span><h3>Reading the credit record.</h3><p>Calculating the score and its reasons with the original model.</p></div></div>` : state.error ? `<div class="result-error" role="alert"><h3>The score could not load.</h3><p>${esc(state.error)}</p><button class="primary" data-retry>Try again ${icon()}</button></div>` : r ? resultContent(r) : ""}
   </section>`;
 }
 function resultContent(r) {
-  const max=Math.max(...r.reasons.map(x=>Math.abs(x.contribution)),.001);
-  const first=r.reasons[0];
-  return `<div class="result-content"><section class="score-area" aria-label="Model risk score"><p class="eyebrow">ESTIMATED HIGH-RISK PROBABILITY</p><div class="score" aria-label="${pct(r.probability)} percent"><span>${pct(r.probability)}</span><span class="percent">%</span></div><div class="decision-label ${r.higher_risk?'above':'below'}"><span aria-hidden="true">${r.higher_risk?'↗':'↘'}</span> ${r.higher_risk?'Above the decision line':'Below the decision line'}</div><div class="risk-scale"><div class="scale-track"><span class="scale-fill" style="width:${pct(r.probability)}%"></span><i class="scale-threshold"></i><i class="scale-position" style="left:${pct(r.probability)}%"></i></div><div class="scale-labels"><span>0%</span><span>50% decision line</span><span>100%</span></div></div><p class="score-definition">The model uses 50% to separate lower-risk and higher-risk records.</p><p class="score-source">23 inputs · Original XGBoost model</p></section><section class="reasons-area" aria-labelledby="reasons-heading"><div class="reasons-heading"><h3 id="reasons-heading">WHY THIS SCORE?</h3><span>The 5 strongest influences</span></div><div class="reason-key"><span><i class="key-up"></i> Pushes risk up</span><span><i class="key-down"></i> Pulls risk down</span></div><div class="reason-list">${r.reasons.slice(0,5).map((reason,i)=>reasonHTML(reason,max,i)).join('')}</div><p class="reason-insight"><span>↳</span> ${esc(label(first.feature))} has the strongest influence here. Its value of <b>${esc(valueText(first.feature,first.value))}</b> ${first.contribution>0?'pushes the model’s risk up.':'pulls the model’s risk down.'}</p></section></div>
-  <details class="all-reasons"><summary><span>See all 23 reasons</span><span>How the explanation adds up <span aria-hidden="true">+</span></span></summary><div class="explanation-note"><p>TreeSHAP separates the score into individual contributions. Positive numbers raise risk; negative numbers lower it. These numbers are in log-odds, not percentage points. They describe the model, not cause and effect.</p><p>Starting value <b>${r.base_value.toFixed(4)}</b> + contributions <b>${r.reasons.reduce((sum,x)=>sum+x.contribution,0).toFixed(4)}</b> = ${pct(1/(1+Math.exp(-(r.base_value+r.reasons.reduce((sum,x)=>sum+x.contribution,0)))))}% after conversion to probability.</p></div><div class="table-scroll"><table><thead><tr><th>Input</th><th>Recorded value</th><th>Contribution</th></tr></thead><tbody>${r.reasons.map(x=>`<tr><th scope="row">${esc(label(x.feature))}</th><td>${esc(valueText(x.feature,x.value))}</td><td class="${x.contribution>0?'up-text':'down-text'}">${x.contribution>0?'+':''}${x.contribution.toFixed(4)}</td></tr>`).join('')}</tbody></table></div></details>`;
+  const max = Math.max(
+    ...r.reasons.map((x) => Math.abs(x.contribution)),
+    0.001,
+  );
+  const first = r.reasons[0];
+  return `<div class="result-content"><section class="score-area" aria-label="Model risk score"><p class="eyebrow">ESTIMATED HIGH-RISK PROBABILITY</p><div class="score" aria-label="${pct(r.probability)} percent"><span>${pct(r.probability)}</span><span class="percent">%</span></div><div class="decision-label ${r.higher_risk ? "above" : "below"}"><span aria-hidden="true">${r.higher_risk ? "↗" : "↘"}</span> ${r.higher_risk ? "Above the decision line" : "Below the decision line"}</div><div class="risk-scale"><div class="scale-track"><span class="scale-fill" style="width:${pct(r.probability)}%"></span><i class="scale-threshold"></i><i class="scale-position" style="left:${pct(r.probability)}%"></i></div><div class="scale-labels"><span>0%</span><span>50% decision line</span><span>100%</span></div></div><p class="score-definition">The model uses 50% to separate lower-risk and higher-risk records.</p><p class="score-source">23 inputs · Original XGBoost model</p></section><section class="reasons-area" aria-labelledby="reasons-heading"><div class="reasons-heading"><h3 id="reasons-heading">WHY THIS SCORE?</h3><span>The 5 strongest influences</span></div><div class="reason-key"><span><i class="key-up"></i> Pushes risk up</span><span><i class="key-down"></i> Pulls risk down</span></div><div class="reason-list">${r.reasons
+    .slice(0, 5)
+    .map((reason, i) => reasonHTML(reason, max, i))
+    .join(
+      "",
+    )}</div><p class="reason-insight"><span>↳</span> ${esc(label(first.feature))} has the strongest influence here. Its value of <b>${esc(valueText(first.feature, first.value))}</b> ${first.contribution > 0 ? "pushes the model’s risk up." : "pulls the model’s risk down."}</p></section></div>
+  <details class="all-reasons"><summary><span>See all 23 reasons</span><span>How the explanation adds up <span aria-hidden="true">+</span></span></summary><div class="explanation-note"><p>TreeSHAP separates the score into individual contributions. Positive numbers raise risk; negative numbers lower it. These numbers are in log-odds, not percentage points. They describe the model, not cause and effect.</p><p>Starting value <b>${r.base_value.toFixed(4)}</b> + contributions <b>${r.reasons.reduce((sum, x) => sum + x.contribution, 0).toFixed(4)}</b> = ${pct(1 / (1 + Math.exp(-(r.base_value + r.reasons.reduce((sum, x) => sum + x.contribution, 0)))))}% after conversion to probability.</p></div><div class="table-scroll"><table><thead><tr><th>Input</th><th>Recorded value</th><th>Contribution</th></tr></thead><tbody>${r.reasons.map((x) => `<tr><th scope="row">${esc(label(x.feature))}</th><td>${esc(valueText(x.feature, x.value))}</td><td class="${x.contribution > 0 ? "up-text" : "down-text"}">${x.contribution > 0 ? "+" : ""}${x.contribution.toFixed(4)}</td></tr>`).join("")}</tbody></table></div></details>`;
 }
-function reasonHTML(r,max,i) { const up=r.contribution>0; return `<div class="reason-row"><span class="reason-number">0${i+1}</span><div class="reason-data"><div class="reason-name"><span>${esc(label(r.feature))}</span><strong>${esc(valueText(r.feature,r.value))}</strong></div><div class="influence-track"><span class="influence-bar ${up?'up':'down'}" style="width:${Math.max(1,Math.abs(r.contribution)/max*100)}%"></span></div></div><span class="direction ${up?'up':'down'}" aria-label="${up?'Raises risk':'Lowers risk'}">${up?'↗':'↘'}</span></div>`; }
+function reasonHTML(r, max, i) {
+  const up = r.contribution > 0;
+  return `<div class="reason-row"><span class="reason-number">0${i + 1}</span><div class="reason-data"><div class="reason-name"><span>${esc(label(r.feature))}</span><strong>${esc(valueText(r.feature, r.value))}</strong></div><div class="influence-track"><span class="influence-bar ${up ? "up" : "down"}" style="width:${Math.max(1, (Math.abs(r.contribution) / max) * 100)}%"></span></div></div><span class="direction ${up ? "up" : "down"}" aria-label="${up ? "Raises risk" : "Lowers risk"}">${up ? "↗" : "↘"}</span></div>`;
+}
 function optionsHTML() {
-  if(!state.result || state.busy)return '<p class="options-placeholder">The options search becomes available after the score loads.</p>';
-  if(state.optionsBusy)return '<div class="search-loading" role="status"><span class="spinner"></span><div><b>Testing allowed changes.</b><p>The search holds past history fixed and checks each new score. Difficult profiles can take longer.</p></div></div>';
-  if(!state.result.higher_risk)return '<div class="below-message"><span aria-hidden="true">↘</span><div><b>This score is already below 50%.</b><p>No changes are needed to cross the study’s decision line. Choose the higher-risk case to see how the search works.</p></div><button data-case="1" class="text-link">Try the higher-risk case ${icon()}</button></div>';
-  if(!state.options)return '<p class="options-placeholder"><span aria-hidden="true">↗</span> One click starts the search. Your score stays visible while it runs.</p>';
-  if(state.options.error)return `<div class="search-message" role="alert"><b>The search could not finish.</b><p>${esc(state.options.error)} Your risk score is still available.</p></div>`;
-  if(!state.options.options.length)return '<div class="search-message"><span class="search-status">NO OPTION FOUND</span><h3>Some profiles are harder to change.</h3><p>This search found no allowed changes that brought the score below 50% within the 24-month rules. It does not prove that every possible change is impossible.</p></div>';
-  return `<div class="scenario-grid">${state.options.options.map((o,i)=>`<article class="scenario"><div class="scenario-top"><span>SCENARIO 0${i+1}</span><span>${o.changes.length} changes</span></div><div class="scenario-score"><span>${pct(o.probability)}</span><small>%</small><span class="score-drop">↓ ${(state.result.probability*100-o.probability*100).toFixed(1)} pts</span></div><div class="scenario-changes">${o.changes.map(c=>`<div><span>${esc(label(c.feature))}</span><b><del>${esc(valueText(c.feature,c.old))}</del><span aria-hidden="true"> → </span>${esc(valueText(c.feature,c.new))}</b></div>`).join('')}</div><button class="scenario-action" data-compare="${i}">Explore this scenario ${icon()}</button></article>`).join('')}</div><p class="scenario-note">Every scenario was checked by the model. These are simulated combinations, not promised outcomes. The search treats inputs separately, so some combinations may not describe a consistent real credit record.</p>`;
+  if (!state.result || state.busy)
+    return '<p class="options-placeholder">The options search becomes available after the score loads.</p>';
+  if (state.optionsBusy)
+    return '<div class="search-loading" role="status"><span class="spinner"></span><div><b>Testing allowed changes.</b><p>The search holds past history fixed and checks each new score. Difficult profiles can take longer.</p></div></div>';
+  if (!state.result.higher_risk)
+    return `<div class="below-message"><span aria-hidden="true">↘</span><div><b>This score is already below 50%.</b><p>No changes are needed to cross the study’s decision line. Choose the higher-risk case to see how the search works.</p></div><button data-case="1" class="text-link">Try the higher-risk case ${icon()}</button></div>`;
+  if (!state.options)
+    return '<p class="options-placeholder"><span aria-hidden="true">↗</span> One click starts the search. Your score stays visible while it runs.</p>';
+  if (state.options.error)
+    return `<div class="search-message" role="alert"><b>The search could not finish.</b><p>${esc(state.options.error)} Your risk score is still available.</p></div>`;
+  if (!state.options.options.length)
+    return '<div class="search-message"><span class="search-status">NO OPTION FOUND</span><h3>Some profiles are harder to change.</h3><p>This search found no allowed changes that brought the score below 50% within the 24-month rules. It does not prove that every possible change is impossible.</p></div>';
+  return `<div class="scenario-grid">${state.options.options.map((o, i) => `<article class="scenario"><div class="scenario-top"><span>SCENARIO 0${i + 1}</span><span>${o.changes.length} changes</span></div><div class="scenario-score"><span>${pct(o.probability)}</span><small>%</small><span class="score-drop">↓ ${(state.result.probability * 100 - o.probability * 100).toFixed(1)} pts</span></div><div class="scenario-changes">${o.changes.map((c) => `<div><span>${esc(label(c.feature))}</span><b><del>${esc(valueText(c.feature, c.old))}</del><span aria-hidden="true"> → </span>${esc(valueText(c.feature, c.new))}</b></div>`).join("")}</div><button class="scenario-action" data-compare="${i}">Explore this scenario ${icon()}</button></article>`).join("")}</div><p class="scenario-note">Every scenario was checked by the model. These are simulated combinations, not promised outcomes. The search treats inputs separately, so some combinations may not describe a consistent real credit record.</p>`;
 }
-function research() { return `<div class="research-page"><a href="#lab" class="text-link">← Back to the lab</a><div class="research-intro"><p class="eyebrow">THE EVIDENCE / BEHIND THE INTERFACE</p><h1>REAL MODEL.<br><span>VISIBLE LIMITS.</span></h1><p>A research project that predicts credit risk, explains each result, and searches for allowed changes.</p></div><div class="research-stats"><div><b>${metrics.auc.toFixed(4)}</b><span>AUC on the test set</span></div><div><b>${(metrics.acc*100).toFixed(1)}<small>%</small></b><span>Test-set accuracy</span></div><div><b>2,092</b><span>Held-out test profiles</span></div><div><b>10,459</b><span>Profiles in the dataset</span></div></div><section class="method-section"><h2>THREE PARTS.<br>ONE EXPLANATION.</h2><div class="method-list"><div><span>01</span><div><h3>XGBoost predicts</h3><p>The original trained model reads 23 credit values and produces a risk probability. The website reproduces its predictions exactly across all 10,459 dataset profiles.</p></div></div><div><span>02</span><div><h3>TreeSHAP explains</h3><p>Each input gets a contribution to the model score. This shows which values pushed the result up or down.</p></div></div><div><span>03</span><div><h3>DiCE explores</h3><p>The original genetic search tries changes within the study’s rules. Past history stays fixed. Allowed changes follow a 24-month horizon, and displayed scenarios must score below 50%.</p></div></div></div></section><section class="research-charts"><figure><figcaption><span>01 / MODEL PERFORMANCE</span><h3>Risk separation on the test set</h3></figcaption><img src="/assets/fig_roc.png" alt="Original ROC curve for the XGBoost model" loading="lazy"></figure><figure><figcaption><span>02 / PREDICTION OUTCOMES</span><h3>Where the model got it right or wrong</h3></figcaption><img src="/assets/fig_confusion.png" alt="Original model confusion matrix" loading="lazy"></figure><figure><figcaption><span>03 / GLOBAL EXPLANATION</span><h3>Influential values across the dataset</h3></figcaption><img src="/assets/fig_shap_importance.png" alt="Original global SHAP feature importance" loading="lazy"></figure><figure><figcaption><span>04 / BASELINE COMPARISON</span><h3>The models compared in the study</h3></figcaption><img src="/assets/fig_baselines.png" alt="Original baseline model comparison" loading="lazy"></figure></section><section class="study-limits"><p class="eyebrow">READ THE RESULTS IN CONTEXT</p><h2>A MODEL RESULT<br>IS NOT A GUARANTEE.</h2><div><p>The options experiment covered <b>${experiment.applicants_explained} higher-risk test profiles</b>. It generated ${experiment.cfs_generated} of ${experiment.cfs_requested} requested scenarios and found options for ${(experiment.coverage*100).toFixed(0)}% of those profiles. All returned scenarios passed the stated validity and rule checks.</p><p>These results describe this US HELOC dataset. They do not establish performance for Nigerian lending or a new population. No live bank connection or real lending decision is part of this demonstration.</p><p>The search changes inputs independently and cannot enforce every relationship between account values. Explanations describe model behaviour, not causal effects. The original notebook records data preparation and evaluation, including preprocessing choices that can influence the scores.</p><p>AUC confidence interval: ${metrics.auc_ci_low.toFixed(4)}–${metrics.auc_ci_high.toFixed(4)}. The training data contained 8,367 original records and 367 additional SMOTE records.</p></div></section><section class="project-credit"><p class="eyebrow">MSc COMPUTER SCIENCE / BAZE UNIVERSITY, ABUJA</p><h3>Jamal E.O. Obaseki</h3><p>Explainable Artificial Intelligence in Financial Risk Prediction: A Dual-Layer Framework for Stable and Actionable Counterfactuals.</p><a class="text-link" href="https://github.com/motechbello1/XAI-Risk-Prediction" target="_blank" rel="noopener">Open the notebook and source ↗</a></section></div>`; }
-async function request(operation,values,controller) { const timeout=setTimeout(()=>controller.abort(),operation==='options'?285000:90000); try { const r=await fetch('/api/index',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operation,values}),signal:controller.signal}); const data=await r.json().catch(()=>({error:'An unexpected response came back. Please try again.'})); if(!r.ok)throw Error(data.error || 'Please try again shortly.'); return data; } finally {clearTimeout(timeout);} }
-async function score(values,{example=state.example,custom=state.custom,comparison=null}={}) {
-  runController?.abort(); optionsController?.abort();
-  const controller=new AbortController(); runController=controller;
-  state={...state,values:{...values},example,custom,comparison,result:null,error:'',busy:true,options:null,optionsBusy:false};
-  const key=JSON.stringify(config.order.map(f=>values[f]));
+function research() {
+  return `<div class="research-page"><a href="#lab" class="text-link">← Back to the lab</a><div class="research-intro"><p class="eyebrow">THE EVIDENCE / BEHIND THE INTERFACE</p><h1>REAL MODEL.<br><span>VISIBLE LIMITS.</span></h1><p>A research project that predicts credit risk, explains each result, and searches for allowed changes.</p></div><div class="research-stats"><div><b>${metrics.auc.toFixed(4)}</b><span>AUC on the test set</span></div><div><b>${(metrics.acc * 100).toFixed(1)}<small>%</small></b><span>Test-set accuracy</span></div><div><b>2,092</b><span>Held-out test profiles</span></div><div><b>10,459</b><span>Profiles in the dataset</span></div></div><section class="method-section"><h2>THREE PARTS.<br>ONE EXPLANATION.</h2><div class="method-list"><div><span>01</span><div><h3>XGBoost predicts</h3><p>The original trained model reads 23 credit values and produces a risk probability. The website reproduces its predictions exactly across all 10,459 dataset profiles.</p></div></div><div><span>02</span><div><h3>TreeSHAP explains</h3><p>Each input gets a contribution to the model score. This shows which values pushed the result up or down.</p></div></div><div><span>03</span><div><h3>DiCE explores</h3><p>The original genetic search tries changes within the study’s rules. Past history stays fixed. Allowed changes follow a 24-month horizon, and displayed scenarios must score below 50%.</p></div></div></div></section><section class="research-charts"><figure><figcaption><span>01 / MODEL PERFORMANCE</span><h3>Risk separation on the test set</h3></figcaption><img src="/assets/fig_roc.png" alt="Original ROC curve for the XGBoost model" loading="lazy"></figure><figure><figcaption><span>02 / PREDICTION OUTCOMES</span><h3>Where the model got it right or wrong</h3></figcaption><img src="/assets/fig_confusion.png" alt="Original model confusion matrix" loading="lazy"></figure><figure><figcaption><span>03 / GLOBAL EXPLANATION</span><h3>Influential values across the dataset</h3></figcaption><img src="/assets/fig_shap_importance.png" alt="Original global SHAP feature importance" loading="lazy"></figure><figure><figcaption><span>04 / BASELINE COMPARISON</span><h3>The models compared in the study</h3></figcaption><img src="/assets/fig_baselines.png" alt="Original baseline model comparison" loading="lazy"></figure></section><section class="study-limits"><p class="eyebrow">READ THE RESULTS IN CONTEXT</p><h2>A MODEL RESULT<br>IS NOT A GUARANTEE.</h2><div><p>The options experiment covered <b>${experiment.applicants_explained} higher-risk test profiles</b>. It generated ${experiment.cfs_generated} of ${experiment.cfs_requested} requested scenarios and found options for ${(experiment.coverage * 100).toFixed(0)}% of those profiles. All returned scenarios passed the stated validity and rule checks.</p><p>These results describe this US HELOC dataset. They do not establish performance for Nigerian lending or a new population. No live bank connection or real lending decision is part of this demonstration.</p><p>The search changes inputs independently and cannot enforce every relationship between account values. Explanations describe model behaviour, not causal effects. The original notebook records data preparation and evaluation, including preprocessing choices that can influence the scores.</p><p>AUC confidence interval: ${metrics.auc_ci_low.toFixed(4)}–${metrics.auc_ci_high.toFixed(4)}. The training data contained 8,367 original records and 367 additional SMOTE records.</p></div></section><section class="project-credit"><p class="eyebrow">MSc COMPUTER SCIENCE / BAZE UNIVERSITY, ABUJA</p><h3>Jamal E.O. Obaseki</h3><p>Explainable Artificial Intelligence in Financial Risk Prediction: A Dual-Layer Framework for Stable and Actionable Counterfactuals.</p><a class="text-link" href="https://github.com/motechbello1/XAI-Risk-Prediction" target="_blank" rel="noopener">Open the notebook and source ↗</a></section></div>`;
+}
+async function request(operation, values, controller) {
+  const timeout = setTimeout(
+    () => controller.abort(),
+    operation === "options" ? 285000 : 90000,
+  );
+  try {
+    const r = await fetch("/api/index", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ operation, values }),
+      signal: controller.signal,
+    });
+    const data = await r
+      .json()
+      .catch(() => ({
+        error: "An unexpected response came back. Please try again.",
+      }));
+    if (!r.ok) throw Error(data.error || "Please try again shortly.");
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+async function score(
+  values,
+  { example = state.example, custom = state.custom, comparison = null } = {},
+) {
+  runController?.abort();
+  optionsController?.abort();
+  const controller = new AbortController();
+  runController = controller;
+  state = {
+    ...state,
+    values: { ...values },
+    example,
+    custom,
+    comparison,
+    result: null,
+    error: "",
+    busy: true,
+    options: null,
+    optionsBusy: false,
+  };
+  const key = JSON.stringify(config.order.map((f) => values[f]));
   shell();
-  try { const data=cache.get(key) || await request('predict',values,controller); if(runController!==controller)return; cache.set(key,data); state.result=data; }
-  catch(e) {if(runController!==controller)return; state.error=e.name==='AbortError'?'The request took too long. Try once more.':e.message;}
-  finally {if(runController===controller){state.busy=false;shell();}}
+  try {
+    const data =
+      cache.get(key) || (await request("predict", values, controller));
+    if (runController !== controller) return;
+    cache.set(key, data);
+    state.result = data;
+  } catch (e) {
+    if (runController !== controller) return;
+    state.error =
+      e.name === "AbortError"
+        ? "The request took too long. Try once more."
+        : e.message;
+  } finally {
+    if (runController === controller) {
+      state.busy = false;
+      shell();
+    }
+  }
 }
-async function search() { if(!state.result || !state.result.higher_risk || state.optionsBusy)return; const controller=new AbortController();optionsController=controller;state.optionsBusy=true;state.options=null; const values={...state.values};shell();try {const data=await request('options',values,controller);if(optionsController!==controller)return;state.options=data;}catch(e){if(optionsController!==controller)return;state.options={error:e.name==='AbortError'?'The search took too long. You can try it again.':e.message};}finally{if(optionsController===controller){state.optionsBusy=false;shell();}} }
-function fieldHTML(f) { const v=draft[f]; const coded=v!==null && v<0; return `<div class="editor-field"><div><label for="value-${f}">${esc(label(f))}${unit(f)===' months'?' (months)':unit(f)==='%'?' (%)':''}</label><p id="help-${f}">${esc(explanations[f])}</p></div><div class="field-controls"><input id="value-${f}" data-field="${f}" type="number" inputmode="numeric" min="0" max="${config.features[f].max}" step="1" value="${coded || v===null?'':v}" placeholder="0–${config.features[f].max}" aria-describedby="help-${f}" ${coded?'disabled':''}><select data-code="${f}" aria-label="Record status for ${esc(label(f))}"><option value="recorded" ${!coded?'selected':''}>Recorded value</option>${Object.entries(specialText).map(([code,text])=>`<option value="${code}" ${String(v)===code?'selected':''}>${text} (${code})</option>`).join('')}</select></div></div>`; }
-function openEditor() { editorReturn=document.activeElement;draft={...state.values};renderEditor();$('#editor').showModal(); }
-function renderEditor() { $('#editor').innerHTML=`<form id="profile-form" novalidate><div class="editor-header"><div><p class="eyebrow">THE CREDIT RECORD / 23 INPUTS</p><h2 id="editor-title" tabindex="-1">EDIT THE PROFILE.</h2></div><button type="button" data-close class="close-button" aria-label="Close profile editor">${icon('close')}</button></div><div class="editor-body"><div class="editor-intro"><p>Change a value and update the score. Unchanged values stay as shown. Use the record status when information is missing.</p><button type="button" class="text-link" data-blank>Start with blank inputs ↗</button></div>${groups.map((g,i)=>`<details class="field-group" ${i===0?'open':''}><summary><span>0${i+1} / ${groupNames[i]}</span><span>+</span></summary><p class="group-description">${groupDescriptions[i]}</p>${config.order.filter(f=>config.features[f].group===g).map(fieldHTML).join('')}</details>`).join('')}<p class="editor-error" id="editor-error" role="alert" hidden></p></div><div class="editor-footer"><button type="button" class="text-link" data-close>Cancel</button><button type="submit" class="primary">Update the score ${icon()}</button></div></form>`; }
-function closeEditor() {$('#editor').close();draft=null;editorReturn?.focus();}
-$('#editor').addEventListener('cancel',()=>{draft=null;});
-document.addEventListener('input',e=>{if(e.target.dataset.field && draft)draft[e.target.dataset.field]=e.target.value===''?null:Number(e.target.value);});
-document.addEventListener('change',e=>{const f=e.target.dataset.code;if(!f || !draft)return;const input=$(`#value-${f}`); const coded=e.target.value!=='recorded';draft[f]=coded?Number(e.target.value):null;input.disabled=coded;input.value='';if(!coded)input.focus();});
-document.addEventListener('submit',e=>{if(e.target.id!=='profile-form')return;e.preventDefault();for(const f of config.order){const v=draft[f];if(v===null || !Number.isInteger(v) || (v<0 && ![-7,-8,-9].includes(v)) || v>config.features[f].max){const input=$(`#value-${f}`);input.closest('details').open=true;$('#editor-error').hidden=false;$('#editor-error').textContent=`Check ${label(f)}. Enter a whole number from 0 to ${config.features[f].max}, or choose a record status.`;input.setAttribute('aria-invalid','true');input.focus();return;}}const values={...draft};closeEditor();const same=config.order.every(f=>values[f]===config.examples[state.example][f]);score(values,{custom:!same});toast('Profile updated.');});
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.case!==undefined){score(config.examples[Number(b.dataset.case)],{example:Number(b.dataset.case),custom:false});}else if(b.hasAttribute('data-edit'))openEditor();else if(b.hasAttribute('data-close'))closeEditor();else if(b.hasAttribute('data-blank')){draft=Object.fromEntries(config.order.map(f=>[f,null]));renderEditor();$('#editor-title').focus();}else if(b.hasAttribute('data-retry'))score(state.values,{comparison:state.comparison});else if(b.hasAttribute('data-search'))search();else if(b.dataset.compare!==undefined){const option=state.options?.options[Number(b.dataset.compare)];if(option){const comparison={values:{...state.values},result:state.result,options:state.options,example:state.example,custom:state.custom};score(option.values,{custom:true,comparison});$('#assessment').scrollIntoView({behavior:'smooth',block:'start'});}}else if(b.hasAttribute('data-restore')){runController?.abort();optionsController?.abort();runController=null;optionsController=null;state={...state,...state.comparison,comparison:null,busy:false,optionsBusy:false,error:''};shell();}else if(b.hasAttribute('data-print')){document.querySelectorAll('.all-reasons').forEach(d=>d.open=true);window.print();}});
-window.addEventListener('hashchange',()=>{if($('#editor').open)closeEditor();shell();window.scrollTo(0,0);$('#main').focus({preventScroll:true});});
-shell();score(state.values);
+async function search() {
+  if (!state.result || !state.result.higher_risk || state.optionsBusy) return;
+  const controller = new AbortController();
+  optionsController = controller;
+  state.optionsBusy = true;
+  state.options = null;
+  const values = { ...state.values };
+  shell();
+  try {
+    const data = await request("options", values, controller);
+    if (optionsController !== controller) return;
+    state.options = data;
+  } catch (e) {
+    if (optionsController !== controller) return;
+    state.options = {
+      error:
+        e.name === "AbortError"
+          ? "The search took too long. You can try it again."
+          : e.message,
+    };
+  } finally {
+    if (optionsController === controller) {
+      state.optionsBusy = false;
+      shell();
+    }
+  }
+}
+function fieldHTML(f) {
+  const v = draft[f];
+  const coded = v !== null && v < 0;
+  return `<div class="editor-field"><div><label for="value-${f}">${esc(label(f))}${unit(f) === " months" ? " (months)" : unit(f) === "%" ? " (%)" : ""}</label><p id="help-${f}">${esc(explanations[f])}</p></div><div class="field-controls"><input id="value-${f}" data-field="${f}" type="number" inputmode="numeric" min="0" max="${config.features[f].max}" step="1" value="${coded || v === null ? "" : v}" placeholder="0–${config.features[f].max}" aria-describedby="help-${f}" ${coded ? "disabled" : ""}><p class="field-error" id="error-${f}" hidden></p><select data-code="${f}" aria-label="Record status for ${esc(label(f))}"><option value="recorded" ${!coded ? "selected" : ""}>Recorded value</option>${Object.entries(
+    specialText,
+  )
+    .map(
+      ([code, text]) =>
+        `<option value="${code}" ${String(v) === code ? "selected" : ""}>${text} (${code})</option>`,
+    )
+    .join("")}</select></div></div>`;
+}
+function openEditor() {
+  editorReturn = document.activeElement;
+  draft = { ...state.values };
+  renderEditor();
+  $("#editor").showModal();
+}
+function renderEditor() {
+  $("#editor").innerHTML =
+    `<form id="profile-form" novalidate><div class="editor-header"><div><p class="eyebrow">THE CREDIT RECORD / 23 INPUTS</p><h2 id="editor-title" tabindex="-1">EDIT THE PROFILE.</h2></div><button type="button" data-close class="close-button" aria-label="Close profile editor">${icon("close")}</button></div><div class="editor-body"><div class="editor-intro"><p>Change a value and update the score. Unchanged values stay as shown. Use the record status when information is missing.</p><button type="button" class="text-link" data-blank>Start with blank inputs ↗</button></div>${groups
+      .map(
+        (g, i) =>
+          `<details class="field-group" ${i === 0 ? "open" : ""}><summary><span>0${i + 1} / ${groupNames[i]}</span><span>+</span></summary><p class="group-description">${groupDescriptions[i]}</p>${config.order
+            .filter((f) => config.features[f].group === g)
+            .map(fieldHTML)
+            .join("")}</details>`,
+      )
+      .join(
+        "",
+      )}<p class="editor-error" id="editor-error" role="alert" hidden></p></div><div class="editor-footer"><button type="button" class="text-link" data-close>Cancel</button><button type="submit" class="primary">Update the score ${icon()}</button></div></form>`;
+}
+function closeEditor() {
+  $("#editor").close();
+  draft = null;
+  editorReturn?.focus();
+}
+$("#editor").addEventListener("cancel", () => {
+  draft = null;
+});
+document.addEventListener("input", (e) => {
+  if (e.target.dataset.field && draft) {
+    const f = e.target.dataset.field;
+    draft[f] = e.target.value === "" ? null : Number(e.target.value);
+    e.target.removeAttribute("aria-invalid");
+    $(`#error-${f}`).hidden = true;
+    $("#editor-error").hidden = true;
+  }
+});
+document.addEventListener("change", (e) => {
+  const f = e.target.dataset.code;
+  if (!f || !draft) return;
+  const input = $(`#value-${f}`);
+  const coded = e.target.value !== "recorded";
+  draft[f] = coded ? Number(e.target.value) : null;
+  input.removeAttribute("aria-invalid");
+  $(`#error-${f}`).hidden = true;
+  $("#editor-error").hidden = true;
+  input.disabled = coded;
+  input.value = "";
+  if (!coded) input.focus();
+});
+document.addEventListener("submit", (e) => {
+  if (e.target.id !== "profile-form") return;
+  e.preventDefault();
+  for (const f of config.order) {
+    const v = draft[f];
+    if (
+      v === null ||
+      !Number.isInteger(v) ||
+      (v < 0 && ![-7, -8, -9].includes(v)) ||
+      v > config.features[f].max
+    ) {
+      const input = $(`#value-${f}`);
+      input.closest("details").open = true;
+      $("#editor-error").hidden = false;
+      $("#editor-error").textContent =
+        `Check ${label(f)}. Enter a whole number from 0 to ${config.features[f].max}, or choose a record status.`;
+      input.setAttribute("aria-invalid", "true");
+      input.setAttribute("aria-describedby", `help-${f} error-${f}`);
+      const message = $(`#error-${f}`);
+      message.hidden = false;
+      message.textContent = `Use 0–${config.features[f].max} or a record status.`;
+      input.focus();
+      return;
+    }
+  }
+  const values = { ...draft };
+  closeEditor();
+  const same = config.order.every(
+    (f) => values[f] === config.examples[state.example][f],
+  );
+  score(values, { custom: !same });
+  toast("Profile updated.");
+});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.case !== undefined) {
+    score(config.examples[Number(b.dataset.case)], {
+      example: Number(b.dataset.case),
+      custom: false,
+    });
+  } else if (b.hasAttribute("data-jump"))
+    $("#changes").scrollIntoView({ behavior: "smooth", block: "start" });
+  else if (b.hasAttribute("data-edit")) openEditor();
+  else if (b.hasAttribute("data-close")) closeEditor();
+  else if (b.hasAttribute("data-blank")) {
+    draft = Object.fromEntries(config.order.map((f) => [f, null]));
+    renderEditor();
+    $("#editor-title").focus();
+  } else if (b.hasAttribute("data-retry"))
+    score(state.values, { comparison: state.comparison });
+  else if (b.hasAttribute("data-search")) search();
+  else if (b.dataset.compare !== undefined) {
+    const option = state.options?.options[Number(b.dataset.compare)];
+    if (option) {
+      const comparison = {
+        values: { ...state.values },
+        result: state.result,
+        options: state.options,
+        example: state.example,
+        custom: state.custom,
+      };
+      score(option.values, { custom: true, comparison });
+      $("#assessment").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  } else if (b.hasAttribute("data-restore")) {
+    runController?.abort();
+    optionsController?.abort();
+    runController = null;
+    optionsController = null;
+    state = {
+      ...state,
+      ...state.comparison,
+      comparison: null,
+      busy: false,
+      optionsBusy: false,
+      error: "",
+    };
+    shell();
+  } else if (b.hasAttribute("data-print")) {
+    document.querySelectorAll(".all-reasons").forEach((d) => (d.open = true));
+    window.print();
+  }
+});
+window.addEventListener("hashchange", () => {
+  if ($("#editor").open) closeEditor();
+  shell();
+  window.scrollTo(0, 0);
+  $("#main").focus({ preventScroll: true });
+});
+shell();
+score(state.values);

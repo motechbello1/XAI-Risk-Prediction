@@ -1,30 +1,75 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#254bff">
-  <meta name="description" content="See a real credit-risk score, read the reasons, and compare possible changes. An interactive explainable AI research lab.">
-  <meta property="og:title" content="XAI Risk Lab | See the risk. Read the reasons.">
-  <meta property="og:description" content="A credit-risk model you can explore. Choose a case, see its score, and understand what shaped it.">
-  <title>XAI Risk Lab | See the risk. Read the reasons.</title>
-  <link rel="icon" type="image/svg+xml" href="/assets/mark.svg">
-  <link rel="preload" as="font" type="font/woff2" href="/assets/plex-400.woff2" crossorigin>
-  <link rel="preload" as="font" type="font/woff2" href="/assets/barlow-600.woff2" crossorigin>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.js"></script>
-</head>
-<body>
-  <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header">
-    <a class="brand" href="#lab" aria-label="XAI Risk Lab home"><img src="/assets/mark.svg" width="36" height="36" alt=""><span>XAI<span class="brand-divider">/</span>RISK LAB</span></a>
-    <nav aria-label="Main navigation"><a href="#lab" data-nav="lab">Explore the model</a><a href="#research" data-nav="research">The research</a></nav>
-    <button class="theme-button" aria-label="Switch to dark theme" title="Switch colour theme"></button>
-  </header>
-  <main id="main" tabindex="-1"><div class="initial-loading" role="status">Opening the risk lab…</div></main>
-  <footer class="site-footer"><span>Jamal E.O. Obaseki <span class="footer-divider">/</span> Baze University</span><span>US FICO HELOC data · Research demonstration</span><a href="https://github.com/motechbello1/XAI-Risk-Prediction" target="_blank" rel="noopener">View source ↗</a></footer>
-  <dialog id="editor" aria-labelledby="editor-title"></dialog>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <noscript><p>Enable JavaScript to explore the model.</p></noscript>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#254bff" />
+    <meta
+      name="description"
+      content="See a real credit-risk score, read the reasons, and compare possible changes. An interactive explainable AI research lab."
+    />
+    <meta
+      property="og:title"
+      content="XAI Risk Lab | See the risk. Read the reasons."
+    />
+    <meta
+      property="og:description"
+      content="A credit-risk model you can explore. Choose a case, see its score, and understand what shaped it."
+    />
+    <title>XAI Risk Lab | See the risk. Read the reasons.</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/mark.svg" />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/assets/plex-400.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/assets/barlow-600.woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="#lab" aria-label="XAI Risk Lab home"
+        ><img src="/assets/mark.svg" width="36" height="36" alt="" /><span
+          >XAI<span class="brand-divider">/</span>RISK LAB</span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#lab" data-nav="lab">Explore the model</a
+        ><a href="#research" data-nav="research">The research</a>
+      </nav>
+      <button
+        class="theme-button"
+        aria-label="Switch to dark theme"
+        title="Switch colour theme"
+      ></button>
+    </header>
+    <main id="main" tabindex="-1">
+      <div class="initial-loading" role="status">Opening the risk lab…</div>
+    </main>
+    <footer class="site-footer">
+      <span
+        >Jamal E.O. Obaseki <span class="footer-divider">/</span> Baze
+        University</span
+      ><span>US FICO HELOC data · Research demonstration</span
+      ><a
+        href="https://github.com/motechbello1/XAI-Risk-Prediction"
+        target="_blank"
+        rel="noopener"
+        >View source ↗</a
+      >
+    </footer>
+    <dialog id="editor" aria-labelledby="editor-title"></dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <noscript><p>Enable JavaScript to explore the model.</p></noscript>
+  </body>
 </html>
