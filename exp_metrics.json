@@ -1,5 +1,22 @@
 {
+  "applicants_explained": 10,
+  "cfs_requested": 30,
+  "cfs_generated": 14,
   "validity": 1.0,
-  "proximity": 54.70557953257177,
-  "sparsity": 1.8
+  "coverage": 0.5,
+  "proximity": 65.92857142857143,
+  "proximity_mad": 10.602921553661997,
+  "sparsity": 3.9285714285714284,
+  "diversity_mad": 7.449014649791668,
+  "rule_compliance": 1.0,
+  "cf_stability_seed": 0.7180086580086581,
+  "cf_stability_noise": 0.5830055210489993,
+  "cf_found_rate_seed_reruns": 1.0,
+  "cf_found_rate_noisy_copies": 0.9583333333333334,
+  "noisy_copies_already_approved": 1,
+  "literal_stability_rounded_smote_model": 1.0,
+  "prediction_stability_literal_0.01units": 0.9434990439770555,
+  "prediction_stability_whole_0.10sd": 0.9619980879541108,
+  "shap_top5_rerun_jaccard": 1.0,
+  "lime_top5_rerun_jaccard": 0.8666666666666668
 }

@@ -1,0 +1,28 @@
+{
+  "horizon_months": 24,
+  "rules": {
+    "ExternalRiskEstimate": "fixed",
+    "MSinceOldestTradeOpen": "up_time",
+    "MSinceMostRecentTradeOpen": "up_time",
+    "AverageMInFile": "up_time",
+    "NumSatisfactoryTrades": "up_to_total",
+    "NumTrades60Ever2DerogPubRec": "fixed",
+    "NumTrades90Ever2DerogPubRec": "fixed",
+    "PercentTradesNeverDelq": "fixed",
+    "MSinceMostRecentDelq": "up_time",
+    "MaxDelq2PublicRecLast12M": "fixed",
+    "MaxDelqEver": "fixed",
+    "NumTotalTrades": "fixed",
+    "NumTradesOpeninLast12M": "down",
+    "PercentInstallTrades": "fixed",
+    "MSinceMostRecentInqexcl7days": "up_time_24",
+    "NumInqLast6M": "down",
+    "NumInqLast6Mexcl7days": "down",
+    "NetFractionRevolvingBurden": "down",
+    "NetFractionInstallBurden": "down",
+    "NumRevolvingTradesWBalance": "down",
+    "NumInstallTradesWBalance": "down",
+    "NumBank2NatlTradesWHighUtilization": "down",
+    "PercentTradesWBalance": "down"
+  }
+}
