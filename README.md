@@ -4,6 +4,8 @@ Code for the MSc dissertation *Explainable Artificial Intelligence in Financial 
 
 ## Clarity website
 
+[Open the live Clarity website](https://xai-risk-prediction.vercel.app/).
+
 The new Vercel website is in [`web/`](web/). It offers a four-section assessment,
 three ready-to-use profiles, exact TreeSHAP reasons, on-demand constrained DiCE
 options, the original research figures, light/dark themes and a five-stage

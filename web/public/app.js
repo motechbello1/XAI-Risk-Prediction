@@ -90,7 +90,7 @@ const unit = f => f.startsWith('MSince') || f === 'AverageMInFile' ? ' months' :
 const specialText = {'-7':'Condition not met', '-8':'No usable record', '-9':'No bureau record'};
 const valueText = (f, v) => v < 0 ? specialText[String(v)] : `${v}${unit(f)}`;
 let state = {values:Object.fromEntries(config.order.map(f => [f,null])),example:'custom',step:0,result:null,assessed:null,options:null,runBusy:false,optionsBusy:false,error:'',present:-1};
-let activeRun, activeOptions;
+let activeRun, activeOptions, lastRenderedRoute;
 function go(route) { if (location.hash === `#${route}`) { render(); window.scrollTo(0,0); } else location.hash = route; }
 const route = () => location.hash.slice(1) || 'home';
 function exampleCards() { return exampleMeta.map((x,i) => `<button class="example-card" data-example="${i}"><span class="example-icon">${icon(x.icon)}</span>${icon('arrow','card-arrow')}<h3>${x.title}</h3><p>${x.text}</p><small>${x.note}</small></button>`).join(''); }
@@ -147,7 +147,7 @@ function optionsHTML() {
   if (!state.options) return '<p class="options-note">The search runs when you choose “Explore possible changes”. Model suggestions are not financial advice or a promise of approval.</p>';
   if (state.options.error) return `<div class="form-error" role="alert">${esc(state.options.error)}</div>`;
   if (!state.options.options.length) return `<div class="callout"><b>No suitable option found.</b>The search did not find a set of allowed changes that brought this score below 50% within the 24-month rules. This does not prove that every possible option is impossible. The reasons above show what the model is responding to.</div>`;
-  return state.options.options.map((option,i) => `<div class="option-card"><div class="card-heading"><h3>Possibility ${i+1}</h3><strong>${(state.result.probability*100).toFixed(1)}% → ${(option.probability*100).toFixed(1)}%</strong></div><div class="option-changes">${option.changes.map(c => `<div class="option-change"><span>${esc(label(c.feature))}${unit(c.feature) === ' months' ? '<small> · months</small>' : ''}</span><span>${esc(valueText(c.feature,c.old))} → ${esc(valueText(c.feature,c.new))}</span></div>`).join('')}</div><button class="button text small" data-apply-option="${i}">View this changed profile ${icon('arrow')}</button></div>`).join('')+'<p class="options-note">These are model scenarios, not guaranteed outcomes. Time-based values are searched separately, even though they move together in real life. Each shown option follows the rules and was checked against the model again.</p>';
+  return state.options.options.map((option,i) => `<div class="option-card"><div class="card-heading"><h3>Possibility ${i+1}</h3><strong>${(state.result.probability*100).toFixed(1)}% → ${(option.probability*100).toFixed(1)}%</strong></div><div class="option-changes">${option.changes.map(c => `<div class="option-change"><span>${esc(label(c.feature))}${unit(c.feature) === ' months' ? '<small> · months</small>' : ''}</span><span>${esc(valueText(c.feature,c.old))} → ${esc(valueText(c.feature,c.new))}</span></div>`).join('')}</div><button class="button text small" data-apply-option="${i}">View this changed profile ${icon('arrow')}</button></div>`).join('')+'<p class="options-note">These are model scenarios, not guaranteed outcomes. The search treats values separately and does not enforce every relationship between them. Some combinations may not describe a coherent real credit record. Each shown option follows the study’s rules and was checked against the model again.</p>';
 }
 const metric = (name,value,text) => `<div class="metric-card"><span class="metric-label">${name}</span><strong>${value}</strong><p>${text}</p></div>`;
 function evidence() { return `<div class="container"><div class="page-intro"><div class="eyebrow">THE RESEARCH, IN THE OPEN</div><h1>Evidence behind the model.</h1><p>The recorded study results, with a plain-English explanation of what each number tells us.</p></div>
@@ -174,7 +174,9 @@ function guide() { return `<div class="container"><div class="page-intro"><div c
 function render() {
   const current = route();
   document.title = `${({home:'Credit risk, explained',assess:'Risk assessment',result:'Your risk result',evidence:'Model & evidence',guide:'How it works'})[current] || 'Credit risk, explained'} | Clarity`;
-  $('#main').innerHTML = `<div class="page-enter">${({home,assess,result,evidence,guide}[current] || home)()}</div>`;
+  const entering = lastRenderedRoute !== current;
+  lastRenderedRoute = current;
+  $('#main').innerHTML = `<div class="${entering ? 'page-enter' : ''}">${({home,assess,result,evidence,guide}[current] || home)()}</div>`;
   document.querySelectorAll('[data-nav]').forEach(a => { const selected = a.dataset.nav === (current === 'result' ? 'assess' : current); a.classList.toggle('active',selected); if(selected) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   $('header nav').classList.remove('open'); $('#menu-button').setAttribute('aria-expanded','false');
   renderPresentation();
@@ -200,7 +202,7 @@ async function searchOptions() {
   if (state.optionsBusy || !state.result) return;
   const controller = new AbortController(); activeOptions = controller;
   state.optionsBusy = true; state.options = null;
-  const refresh = () => { if (route() === 'result' && $('#options-body')) { $('#options-body').innerHTML = optionsHTML(); $('[data-options]').disabled = state.optionsBusy; } renderPresentation(); };
+  const refresh = () => { if (route() === 'result' && $('#options-body')) { $('#options-body').innerHTML = optionsHTML(); $('[data-options]').disabled = state.optionsBusy; $('[data-options]').innerHTML = `${state.options ? 'Search again' : 'Explore possible changes'} ${icon('arrow')}`; } renderPresentation(); };
   refresh();
   try { const data = await request('options',state.assessed,controller); if(activeOptions === controller) state.options = data; }
   catch(e) { if(activeOptions === controller) state.options = {error:e.name === 'AbortError' ? 'The search took too long. Please try again. Your risk result is still available.' : e.message}; }
@@ -211,7 +213,7 @@ function checkAll() { for(const f of config.order) { const v=state.values[f]; if
 document.addEventListener('input', e => { const f=e.target.dataset.field; if(f) { state.values[f] = e.target.value === '' ? null : Number(e.target.value); state.result=null; state.options=null; } });
 document.addEventListener('change', e => {
   if(e.target.dataset.code) { const f=e.target.dataset.code; state.values[f] = e.target.value === 'recorded' ? null : Number(e.target.value); state.result=null; state.options=null; render(); $(`[data-code="${f}"]`).focus(); }
-  if(e.target.id === 'profile-choice') { if(e.target.value === 'custom') { state.values=Object.fromEntries(config.order.map(f=>[f,null])); state.example='custom'; state.result=null; state.options=null; state.error=''; } else loadExample(Number(e.target.value)); render(); }
+  if(e.target.id === 'profile-choice') { if(e.target.value === 'custom') { activeOptions?.abort(); state.values=Object.fromEntries(config.order.map(f=>[f,null])); state.example='custom'; state.step=0; state.result=null; state.options=null; state.error=''; } else loadExample(Number(e.target.value)); render(); }
 });
 document.addEventListener('submit', e => {
   if(e.target.id !== 'assessment-form') return;
