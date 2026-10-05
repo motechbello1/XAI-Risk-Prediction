@@ -1,0 +1,244 @@
+{
+  "order": [
+    "ExternalRiskEstimate",
+    "MSinceOldestTradeOpen",
+    "MSinceMostRecentTradeOpen",
+    "AverageMInFile",
+    "NumSatisfactoryTrades",
+    "NumTrades60Ever2DerogPubRec",
+    "NumTrades90Ever2DerogPubRec",
+    "PercentTradesNeverDelq",
+    "MSinceMostRecentDelq",
+    "MaxDelq2PublicRecLast12M",
+    "MaxDelqEver",
+    "NumTotalTrades",
+    "NumTradesOpeninLast12M",
+    "PercentInstallTrades",
+    "MSinceMostRecentInqexcl7days",
+    "NumInqLast6M",
+    "NumInqLast6Mexcl7days",
+    "NetFractionRevolvingBurden",
+    "NetFractionInstallBurden",
+    "NumRevolvingTradesWBalance",
+    "NumInstallTradesWBalance",
+    "NumBank2NatlTradesWHighUtilization",
+    "PercentTradesWBalance"
+  ],
+  "features": {
+    "ExternalRiskEstimate": {
+      "label": "External risk estimate",
+      "group": "Credit history",
+      "description": "Consolidated risk score from the credit bureau (higher is better).",
+      "max": 100
+    },
+    "MSinceOldestTradeOpen": {
+      "label": "Months since oldest account opened",
+      "group": "Credit history",
+      "description": "How long ago the oldest credit account was opened.",
+      "max": 900
+    },
+    "MSinceMostRecentTradeOpen": {
+      "label": "Months since newest account opened",
+      "group": "Credit history",
+      "description": "How long ago the most recent credit account was opened.",
+      "max": 400
+    },
+    "AverageMInFile": {
+      "label": "Average months in file",
+      "group": "Credit history",
+      "description": "Average age of all credit accounts, in months.",
+      "max": 400
+    },
+    "NumSatisfactoryTrades": {
+      "label": "Satisfactory accounts",
+      "group": "Credit history",
+      "description": "Number of accounts in good standing.",
+      "max": 100
+    },
+    "NumTotalTrades": {
+      "label": "Total accounts",
+      "group": "Credit history",
+      "description": "Total number of credit accounts on file.",
+      "max": 120
+    },
+    "NumTradesOpeninLast12M": {
+      "label": "Accounts opened in last 12 months",
+      "group": "Credit history",
+      "description": "New credit accounts opened in the past year.",
+      "max": 30
+    },
+    "PercentInstallTrades": {
+      "label": "Percent instalment accounts",
+      "group": "Credit history",
+      "description": "Share of accounts that are instalment loans (0 to 100).",
+      "max": 100
+    },
+    "PercentTradesNeverDelq": {
+      "label": "Percent never late",
+      "group": "Delinquency history",
+      "description": "Share of accounts that have never been late (0 to 100).",
+      "max": 100
+    },
+    "NumTrades60Ever2DerogPubRec": {
+      "label": "Accounts ever 60+ days late",
+      "group": "Delinquency history",
+      "description": "Accounts ever 60 or more days late, or with a derogatory public record.",
+      "max": 30
+    },
+    "NumTrades90Ever2DerogPubRec": {
+      "label": "Accounts ever 90+ days late",
+      "group": "Delinquency history",
+      "description": "Accounts ever 90 or more days late, or with a derogatory public record.",
+      "max": 30
+    },
+    "MSinceMostRecentDelq": {
+      "label": "Months since last late payment",
+      "group": "Delinquency history",
+      "description": "Months since the most recent late payment.",
+      "max": 100
+    },
+    "MaxDelq2PublicRecLast12M": {
+      "label": "Worst delinquency, last 12 months (code)",
+      "group": "Delinquency history",
+      "description": "Bureau code for the worst delinquency in the last 12 months (0 to 9).",
+      "max": 9
+    },
+    "MaxDelqEver": {
+      "label": "Worst delinquency ever (code)",
+      "group": "Delinquency history",
+      "description": "Bureau code for the worst delinquency ever (2 to 8).",
+      "max": 9
+    },
+    "MSinceMostRecentInqexcl7days": {
+      "label": "Months since last credit inquiry",
+      "group": "Credit inquiries",
+      "description": "Months since the most recent credit check, ignoring the last 7 days (0 to 24).",
+      "max": 24
+    },
+    "NumInqLast6M": {
+      "label": "Inquiries in last 6 months",
+      "group": "Credit inquiries",
+      "description": "Number of credit checks in the last 6 months.",
+      "max": 70
+    },
+    "NumInqLast6Mexcl7days": {
+      "label": "Inquiries in last 6 months (excl. last 7 days)",
+      "group": "Credit inquiries",
+      "description": "Credit checks in the last 6 months, ignoring the last 7 days.",
+      "max": 70
+    },
+    "NetFractionRevolvingBurden": {
+      "label": "Revolving balance ratio (%)",
+      "group": "Balances and utilisation",
+      "description": "Card and revolving balances divided by their limits, in percent.",
+      "max": 250
+    },
+    "NetFractionInstallBurden": {
+      "label": "Instalment balance ratio (%)",
+      "group": "Balances and utilisation",
+      "description": "Instalment balances divided by the original loan amounts, in percent.",
+      "max": 500
+    },
+    "NumRevolvingTradesWBalance": {
+      "label": "Revolving accounts with a balance",
+      "group": "Balances and utilisation",
+      "description": "Number of cards or revolving accounts that carry a balance.",
+      "max": 40
+    },
+    "NumInstallTradesWBalance": {
+      "label": "Instalment accounts with a balance",
+      "group": "Balances and utilisation",
+      "description": "Number of instalment loans that still carry a balance.",
+      "max": 30
+    },
+    "NumBank2NatlTradesWHighUtilization": {
+      "label": "Bank/national accounts with high use",
+      "group": "Balances and utilisation",
+      "description": "Bank or national cards used above 75% of their limit.",
+      "max": 20
+    },
+    "PercentTradesWBalance": {
+      "label": "Percent accounts with a balance",
+      "group": "Balances and utilisation",
+      "description": "Share of all accounts that carry a balance (0 to 100).",
+      "max": 100
+    }
+  },
+  "examples": [
+    {
+      "ExternalRiskEstimate": 72,
+      "MSinceOldestTradeOpen": 186,
+      "MSinceMostRecentTradeOpen": 6,
+      "AverageMInFile": 76,
+      "NumSatisfactoryTrades": 20,
+      "NumTrades60Ever2DerogPubRec": 0,
+      "NumTrades90Ever2DerogPubRec": 0,
+      "PercentTradesNeverDelq": 97,
+      "MSinceMostRecentDelq": -7,
+      "MaxDelq2PublicRecLast12M": 6,
+      "MaxDelqEver": 6,
+      "NumTotalTrades": 21,
+      "NumTradesOpeninLast12M": 1,
+      "PercentInstallTrades": 33,
+      "MSinceMostRecentInqexcl7days": 0,
+      "NumInqLast6M": 1,
+      "NumInqLast6Mexcl7days": 1,
+      "NetFractionRevolvingBurden": 29,
+      "NetFractionInstallBurden": 74,
+      "NumRevolvingTradesWBalance": 3,
+      "NumInstallTradesWBalance": 2,
+      "NumBank2NatlTradesWHighUtilization": 1,
+      "PercentTradesWBalance": 67
+    },
+    {
+      "ExternalRiskEstimate": 72,
+      "MSinceOldestTradeOpen": 199,
+      "MSinceMostRecentTradeOpen": 0,
+      "AverageMInFile": 84,
+      "NumSatisfactoryTrades": 15,
+      "NumTrades60Ever2DerogPubRec": 1,
+      "NumTrades90Ever2DerogPubRec": 1,
+      "PercentTradesNeverDelq": 94,
+      "MSinceMostRecentDelq": 35,
+      "MaxDelq2PublicRecLast12M": 6,
+      "MaxDelqEver": 2,
+      "NumTotalTrades": 19,
+      "NumTradesOpeninLast12M": 3,
+      "PercentInstallTrades": 47,
+      "MSinceMostRecentInqexcl7days": 0,
+      "NumInqLast6M": 3,
+      "NumInqLast6Mexcl7days": 3,
+      "NetFractionRevolvingBurden": 10,
+      "NetFractionInstallBurden": -8,
+      "NumRevolvingTradesWBalance": 4,
+      "NumInstallTradesWBalance": -8,
+      "NumBank2NatlTradesWHighUtilization": 0,
+      "PercentTradesWBalance": 56
+    },
+    {
+      "ExternalRiskEstimate": 51,
+      "MSinceOldestTradeOpen": 162,
+      "MSinceMostRecentTradeOpen": 35,
+      "AverageMInFile": 73,
+      "NumSatisfactoryTrades": 4,
+      "NumTrades60Ever2DerogPubRec": 1,
+      "NumTrades90Ever2DerogPubRec": 1,
+      "PercentTradesNeverDelq": 50,
+      "MSinceMostRecentDelq": 1,
+      "MaxDelq2PublicRecLast12M": 2,
+      "MaxDelqEver": 4,
+      "NumTotalTrades": 6,
+      "NumTradesOpeninLast12M": 0,
+      "PercentInstallTrades": 33,
+      "MSinceMostRecentInqexcl7days": 0,
+      "NumInqLast6M": 0,
+      "NumInqLast6Mexcl7days": 0,
+      "NetFractionRevolvingBurden": 43,
+      "NetFractionInstallBurden": 11,
+      "NumRevolvingTradesWBalance": 1,
+      "NumInstallTradesWBalance": 1,
+      "NumBank2NatlTradesWHighUtilization": 0,
+      "PercentTradesWBalance": 50
+    }
+  ]
+}

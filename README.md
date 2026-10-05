@@ -2,6 +2,48 @@
 
 Code for the MSc dissertation *Explainable Artificial Intelligence in Financial Risk Prediction: A Dual-Layer Framework for Stable and Actionable Counterfactuals* (Jamal E.O. Obaseki, Baze University, Abuja).
 
+## Clarity website
+
+The new Vercel website is in [`web/`](web/). It offers a four-section assessment,
+three ready-to-use profiles, exact TreeSHAP reasons, on-demand constrained DiCE
+options, the original research figures, light/dark themes and a five-stage
+presentation mode. Inputs are processed in memory; the application does not
+persist applicant profiles. Reports can be saved through the browser's PDF print dialog.
+
+The website uses a portable JSON export of the existing `model.pkl`. It was
+checked against the original model on all 10,459 dataset profiles: every
+predicted probability matched exactly. The original Streamlit app and notebook
+remain available below.
+
+### Preview the website
+
+```bash
+python3.12 -m venv website-venv
+source website-venv/bin/activate
+pip install -r web/requirements.txt
+python web/scripts/serve.py
+```
+
+Open http://localhost:3000. To run the model checks:
+
+```bash
+python -m unittest discover -s web/tests -v
+```
+
+### Deploy to Vercel
+
+Import this repository, set the root directory to `web`, select **Other** as the
+framework, and use `public` as the output directory. `web/vercel.json` configures
+the static frontend and Python API. No API keys or database are required.
+DiCE 0.12 is vendored with its MIT licence so its dependency metadata does not
+install a separate GPU XGBoost package alongside the CPU runtime.
+
+The counterfactual endpoint runs the same genetic search with the original
+rules and seed 42. Returned options are checked for whole numbers, fixed fields,
+allowed ranges and a probability below 50%. Input bounds from the existing app
+also cap the search ranges. A search with no result is reported as “not found”;
+it is not presented as proof that an improvement is impossible.
+
 ## What is in this repository
 
 | File | Purpose |
