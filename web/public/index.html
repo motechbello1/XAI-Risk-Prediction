@@ -3,44 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f6f2">
-  <meta name="description" content="Explore credit risk with Clarity. Assess a profile, understand the model's reasons, and explore realistic changes. A Baze University explainable AI research project.">
-  <meta property="og:title" content="Clarity | Credit risk, explained">
-  <meta property="og:description" content="A clear view of credit risk. Real predictions. Understandable reasons. Realistic possibilities.">
-  <title>Clarity | Credit risk, explained</title>
+  <meta name="theme-color" content="#254bff">
+  <meta name="description" content="See a real credit-risk score, read the reasons, and compare possible changes. An interactive explainable AI research lab.">
+  <meta property="og:title" content="XAI Risk Lab | See the risk. Read the reasons.">
+  <meta property="og:description" content="A credit-risk model you can explore. Choose a case, see its score, and understand what shaped it.">
+  <title>XAI Risk Lab | See the risk. Read the reasons.</title>
   <link rel="icon" type="image/svg+xml" href="/assets/mark.svg">
-  <link rel="preload" as="font" type="font/woff2" href="/assets/manrope-400.woff2" crossorigin>
-  <link rel="preload" as="font" type="font/woff2" href="/assets/instrument-serif.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/plex-400.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/assets/barlow-600.woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
-    <a href="#home" class="brand" aria-label="Clarity home">
-      <img src="/assets/mark.svg" alt="" width="38" height="38">
-      <span>clarity<span class="brand-sub">CREDIT RISK, EXPLAINED</span></span>
-    </a>
-    <nav aria-label="Main navigation">
-      <a href="#assess" data-nav="assess">Risk assessment</a>
-      <a href="#evidence" data-nav="evidence">Model & evidence</a>
-      <a href="#guide" data-nav="guide">How it works</a>
-    </nav>
-    <div class="header-actions">
-      <button class="icon-button theme-button" title="Switch colour theme" aria-label="Switch to dark theme"><span data-icon="sun"></span></button>
-      <button class="button outline small" id="present-button"><span data-icon="present"></span><span>Present project</span></button>
-      <button class="icon-button menu-button" id="menu-button" aria-expanded="false" aria-label="Open navigation"><span data-icon="menu"></span></button>
-    </div>
+    <a class="brand" href="#lab" aria-label="XAI Risk Lab home"><img src="/assets/mark.svg" width="36" height="36" alt=""><span>XAI<span class="brand-divider">/</span>RISK LAB</span></a>
+    <nav aria-label="Main navigation"><a href="#lab" data-nav="lab">Explore the model</a><a href="#research" data-nav="research">The research</a></nav>
+    <button class="theme-button" aria-label="Switch to dark theme" title="Switch colour theme"></button>
   </header>
-  <div id="presentation" hidden></div>
-  <main id="main" tabindex="-1"><div class="initial-loading">Opening Clarity<span class="loading-dots">...</span></div></main>
-  <footer class="site-footer">
-    <a class="footer-brand" href="#home">clarity<span>Make the model make sense.</span></a>
-    <p>Jamal E.O. Obaseki · MSc Computer Science<br>Baze University, Abuja</p>
-    <div><span class="research-label"><i></i> Research & education</span><p>Based on US FICO HELOC data.<br>Not a live lending decision tool.</p></div>
-  </footer>
-  <button id="back-top" class="icon-button" aria-label="Back to top" hidden><span data-icon="up"></span></button>
+  <main id="main" tabindex="-1"><div class="initial-loading" role="status">Opening the risk lab…</div></main>
+  <footer class="site-footer"><span>Jamal E.O. Obaseki <span class="footer-divider">/</span> Baze University</span><span>US FICO HELOC data · Research demonstration</span><a href="https://github.com/motechbello1/XAI-Risk-Prediction" target="_blank" rel="noopener">View source ↗</a></footer>
+  <dialog id="editor" aria-labelledby="editor-title"></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
-  <noscript><p class="noscript">Please enable JavaScript to use the risk assessment.</p></noscript>
+  <noscript><p>Enable JavaScript to explore the model.</p></noscript>
 </body>
 </html>

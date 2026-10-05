@@ -2,15 +2,16 @@
 
 Code for the MSc dissertation *Explainable Artificial Intelligence in Financial Risk Prediction: A Dual-Layer Framework for Stable and Actionable Counterfactuals* (Jamal E.O. Obaseki, Baze University, Abuja).
 
-## Clarity website
+## XAI Risk Lab website
 
-[Open the live Clarity website](https://xai-risk-prediction.vercel.app/).
+[Open the live XAI Risk Lab](https://xai-risk-prediction.vercel.app/).
 
-The new Vercel website is in [`web/`](web/). It offers a four-section assessment,
-three ready-to-use profiles, exact TreeSHAP reasons, on-demand constrained DiCE
-options, the original research figures, light/dark themes and a five-stage
-presentation mode. Inputs are processed in memory; the application does not
-persist applicant profiles. Reports can be saved through the browser's PDF print dialog.
+The Vercel website is in [`web/`](web/). It opens directly to a real model result.
+Switch among three example cases, read the five strongest TreeSHAP reasons,
+edit all 23 inputs in a single side panel, and compare constrained DiCE scenarios.
+The research view contains the original evidence and figures. Light/dark themes,
+responsive layouts, and browser PDF printing are supported. Inputs are processed
+in memory; the application does not persist applicant profiles.
 
 The website uses a portable JSON export of the existing `model.pkl`. It was
 checked against the original model on all 10,459 dataset profiles: every
